@@ -3,10 +3,8 @@
 результат должен быть итоговым по всем ip-адресам, представленным в табличном формате из двух столбцов: reachable и
 unreachable(использовать модуль tabulate)
 """
-from ipaddress import ip_address, IPv4Address
 
 from tabulate import tabulate
-
 from task_2 import host_range_ping
 
 
