@@ -6,6 +6,7 @@ from socket import socket, AF_INET, SOCK_STREAM
 from threading import Thread
 from messages import MessageType, ServerResponseFieldName, ResponseCode, ClientRequestFieldName
 from utils import send_message, get_data
+from verifiers import ClientVerifier
 
 
 class ReceiverThread(Thread):
@@ -47,7 +48,12 @@ class ReceiverThread(Thread):
                 self.stop()
 
 
-class Client:
+def create_socket() -> socket:
+    return socket(AF_INET, SOCK_STREAM)
+
+
+class Client(metaclass=ClientVerifier):
+
     def __init__(self, account_name, address='localhost', port=7777):
         self.__account = account_name
         self.__address = address
@@ -84,7 +90,7 @@ class Client:
         if self.__connected:
             raise ValueError('Client already connected')
         self.__connected = True
-        self.__sock = socket(AF_INET, SOCK_STREAM)
+        self.__sock = create_socket()
         self.__sock.connect((self.__address, self.__port))
         send_message(self.__create_presence_msg(self.__account), self.__sock)
         self.__receiver = ReceiverThread(self.__sock)
