@@ -5,6 +5,7 @@ import queue
 import select
 from socket import socket, AF_INET, SOCK_STREAM
 
+from repository import Repository
 from descriptor import Port
 from log.server_log_config import logging
 from messages import MessageType, ClientRequestFieldName, PresenceFieldName, MsgFieldName, ResponseCode, \
@@ -30,6 +31,7 @@ class Server(metaclass=ServerVerifier):
         # ~ when online only
         self.__account_to_messages = {}
         self.__s_to_error_msgs = {}
+        self.db = Repository('sqlite:///./clients.sqlite')
 
     @staticmethod
     def __validate_presence(msg) -> str:
@@ -112,6 +114,20 @@ class Server(metaclass=ServerVerifier):
             logger.warning('Error occurred on client socket during sending data. Socket=%s, error=%s', s, e)
             self.__cleanup_socket(s)
 
+    def __handle_presence_msg(self, s, msg):
+        err_msg = Server.__validate_presence(msg)
+        if err_msg:
+            self.__handle_error(s, ResponseCode.BAD_REQUEST.value, err_msg)
+            return
+        if self.__s_to_account.get(s):
+            self.__handle_error(s, ResponseCode.CONFLICT.value, 'Connection with this login already exists')
+            return
+        else:
+            account: str = msg[PresenceFieldName.USER.value][PresenceFieldName.ACCOUNT.value]
+            self.__s_to_account[s] = account
+            self.__account_to_s[account] = s
+            # response
+
     def __handle_message_from_client(self, s: socket):
         try:
             err_message = self.__s_to_error_msgs.get(s)
@@ -124,29 +140,27 @@ class Server(metaclass=ServerVerifier):
                 return
             msg_type = msg.get(ClientRequestFieldName.ACTION.value)
             if msg_type == MessageType.PRESENCE.value:
-                err_msg = Server.__validate_presence(msg)
-                if err_msg:
-                    self.__handle_error(s, ResponseCode.BAD_REQUEST.value, err_msg)
-                    return
-                if self.__s_to_account.get(s):
-                    self.__handle_error(s, ResponseCode.CONFLICT.value, 'Connection with this login already exists')
-                    return
-                else:
-                    account: str = msg[PresenceFieldName.USER.value][PresenceFieldName.ACCOUNT.value]
-                    self.__s_to_account[s] = account
-                    self.__account_to_s[account] = s
-            elif msg_type == MessageType.MESSAGE.value:
-                account = self.__s_to_account.get(s)
-                if not account:
-                    self.__handle_error(s, ResponseCode.UNAUTHORIZED.value, 'No presence message received')
-                    return
+                self.__handle_presence_msg(s, msg)
+                return
+
+            account = self.__s_to_account.get(s)
+            if not account:
+                self.__handle_error(s, ResponseCode.UNAUTHORIZED.value, 'No presence message received')
+                return
+
+            if msg_type == MessageType.MESSAGE.value:
                 err_msg = Server.__validate_msg(msg, account)
                 if err_msg:
                     self.__handle_error(s, ResponseCode.BAD_REQUEST.value, err_msg)
                     return
                 to = msg[MsgFieldName.TO.value]
                 self.__account_to_messages.setdefault(to, queue.Queue()).put(msg)
-                return
+            elif msg_type == MessageType.GET_CONTACTS.value:
+                pass #         self.db.get_contacts(account)
+            elif msg_type == MessageType.ADD_CONTACT.value:
+                pass
+            elif msg_type == MessageType.DEL_CONTACT.value:
+                pass
             else:
                 self.__handle_error(s, ResponseCode.BAD_REQUEST.value, 'Unsupported message type')
                 return

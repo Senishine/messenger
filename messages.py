@@ -26,6 +26,9 @@ class ServerResponseFieldName(Enum):
 class MessageType(Enum):
     PRESENCE = 'presence'
     MESSAGE = 'msg'
+    GET_CONTACTS = 'get_contacts'
+    ADD_CONTACT = 'add_contact'
+    DEL_CONTACT = 'del_contact'
 
 
 class ResponseCode(Enum):

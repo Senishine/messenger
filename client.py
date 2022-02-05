@@ -86,6 +86,35 @@ class Client(metaclass=ClientVerifier):
             }
         }
 
+    @staticmethod
+    def __create_get_contacts(account_name):
+        message_dict = {
+            "action": ClientRequestFieldName.GET_CONTACTS.value,
+            "time": time.time(),
+            "user_login": account_name
+        }
+        return message_dict
+
+    @staticmethod
+    def __create_add_contact(owner_login, contact_login):
+        message_dict = {
+            "action": ClientRequestFieldName.ADD_CONTACT.value,
+            "user_id": owner_login,
+            "time": time.time(),
+            "user_login": contact_login
+        }
+        return message_dict
+
+    @staticmethod
+    def __create_del_contact(owner_login, contact_login):
+        message_dict = {
+            "action": ClientRequestFieldName.DEL_CONTACT.value,
+            "user_id": owner_login,
+            "time": time.time(),
+            "user_login": contact_login
+        }
+        return message_dict
+
     def connect(self):
         if self.__connected:
             raise ValueError('Client already connected')
