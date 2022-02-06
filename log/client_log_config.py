@@ -6,8 +6,8 @@ log_config = {
     "version": 1,
     "loggers": {
         "gb.client": {
-            "handlers": ["file_out"],
-            "level": "INFO",
+            "handlers": ["file_out", "console"],
+            "level": "DEBUG",
         },
     },
     "handlers": {
@@ -16,6 +16,11 @@ log_config = {
             "formatter": "default_formatter",
             "class": "logging.FileHandler",
             "level": "INFO"
+        },
+        "console": {
+            "formatter": "default_formatter",
+            "class": "logging.StreamHandler",
+            "level": "DEBUG"
         }
     },
     "formatters": {

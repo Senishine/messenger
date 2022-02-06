@@ -126,7 +126,7 @@ class Server(metaclass=ServerVerifier):
             account: str = msg[PresenceFieldName.USER.value][PresenceFieldName.ACCOUNT.value]
             self.__s_to_account[s] = account
             self.__account_to_s[account] = s
-            # response
+            self.__account_to_messages.setdefault(account, queue.Queue()).put(Server.__create_response(200))
 
     def __handle_message_from_client(self, s: socket):
         try:
@@ -135,6 +135,7 @@ class Server(metaclass=ServerVerifier):
                 return
             try:
                 msg = get_data(s)
+                logger.debug("Received message from client [msg=%s]", msg)
             except ValueError:
                 self.__handle_error(s, ResponseCode.BAD_REQUEST.value, 'Invalid JSON')
                 return
@@ -156,7 +157,7 @@ class Server(metaclass=ServerVerifier):
                 to = msg[MsgFieldName.TO.value]
                 self.__account_to_messages.setdefault(to, queue.Queue()).put(msg)
             elif msg_type == MessageType.GET_CONTACTS.value:
-                pass #         self.db.get_contacts(account)
+                pass  # self.db.get_contacts(account)
             elif msg_type == MessageType.ADD_CONTACT.value:
                 pass
             elif msg_type == MessageType.DEL_CONTACT.value:

@@ -5,8 +5,8 @@ log_config = {
     "version": 1,
     "loggers": {
         "gb.server": {
-            "handlers": ["file_out"],
-            "level": "INFO",
+            "handlers": ["file_out", "console"],
+            "level": "DEBUG",
         },
     },
     "handlers": {
@@ -16,6 +16,11 @@ log_config = {
             "class": "logging.handlers.TimedRotatingFileHandler",
             "level": "INFO",
             "when": "midnight"
+        },
+        "console": {
+            "formatter": "default_formatter",
+            "class": "logging.StreamHandler",
+            "level": "DEBUG"
         }
     },
     "formatters": {

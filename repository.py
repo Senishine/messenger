@@ -7,7 +7,7 @@ from sqlalchemy.orm import sessionmaker
 class Repository:
     Base = declarative_base()
 
-    class Client(Base):
+    class User(Base):
         __tablename__ = 'clients'
         login = Column(String, primary_key=True)
         name = Column(String)
@@ -23,7 +23,7 @@ class Repository:
         def __repr__(self):
             return f'Client {self.login} with name {self.name}'
 
-    class ClientsHistory(Base):
+    class UserHistory(Base):
         __tablename__ = 'clients_history'
         client_id = Column(Integer, primary_key=True)
         login = Column(String, ForeignKey('clients.login'), nullable=False)
@@ -57,15 +57,15 @@ class Repository:
         Session = sessionmaker(bind=self.engine)
         self.session = Session()
 
-    def add_user(self, user: Client):
+    def add_user(self, user: User):
         self.session.add(user)
         self.session.commit()
 
-    def get_user(self, login: str) -> Client:
-        return self.session.query(self.Client).filter_by(login=login)
+    def get_user(self, login: str) -> User:
+        return self.session.query(self.User).filter_by(login=login)
 
     def connect_to_messenger(self, client_login, ip_address):
-        user_history = self.ClientsHistory(client_login, ip_address, datetime.now())
+        user_history = self.UserHistory(client_login, ip_address, datetime.now())
         self.session.add(user_history)
         self.session.commit()
 
