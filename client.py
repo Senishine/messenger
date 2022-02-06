@@ -8,7 +8,6 @@ from socket import socket, AF_INET, SOCK_STREAM
 from threading import Thread
 from messages import MessageType, ServerResponseFieldName, ClientRequestFieldName
 from utils import send_message, get_data
-from verifiers import ClientVerifier
 
 logger = logging.getLogger('gb.client')
 
@@ -80,7 +79,7 @@ def create_socket() -> socket:
     return socket(AF_INET, SOCK_STREAM)
 
 
-class Client(metaclass=ClientVerifier):
+class Client():
 
     def __init__(self, message_listener, address='localhost', port=7777):
         self.__message_listener = message_listener
@@ -159,10 +158,10 @@ class Client(metaclass=ClientVerifier):
         self.__receiver.join(timeout)
         self.__sock.close()
 
-    def send(self, recipient_name, message):
+    def send(self, recipient_name, message, result):
         if self.__sock is None:
             raise ValueError('Client is not initialised')
-        send_message(self.__create_message(self.__account, recipient_name, message), self.__sock)
+        self.__task_sender.submit_task(self.__create_message(self.__account, recipient_name, message), result)
 
     def login(self, login, password, result):
         if self.__connected:
@@ -197,10 +196,10 @@ class Client(metaclass=ClientVerifier):
 def main():
     client_name = input('Input your name: ')
     client = Client(lambda msg: print(msg), address='localhost', port=7777)
-    client.login(client_name, "ignored", lambda msg: handle_login(client))
+    login_queue = Queue()
+    client.login(client_name, "ignored", lambda msg: login_queue.put(msg))
 
-
-def handle_login(client: Client):
+    login_response = login_queue.get()
     while not client.stopped():
         friend = input('Input friend\'s name: ')
         if friend == ':quit':
@@ -209,7 +208,8 @@ def handle_login(client: Client):
             mes = input('Input your message: ')
             if mes == ':quit':
                 break
-            client.send(friend, mes)
+            client.send(friend, mes,
+                        lambda response: logger.info("Message sent to server [response=%s]", response))
     client.await_termination()
 
 

@@ -88,6 +88,10 @@ class Server(metaclass=ServerVerifier):
         except ValueError:
             pass
 
+    def __send_response(self, account, code, msg=None):
+        self.__account_to_messages.setdefault(account, queue.Queue())\
+            .put(Server.__create_response(code, msg))
+
     def __handle_error(self, s, err_code, err_msg):
         if self.__s_to_error_msgs.get(s):
             return
@@ -105,10 +109,10 @@ class Server(metaclass=ServerVerifier):
             if not account:
                 # no account association -> presence not sent yet
                 return
-            queue = self.__account_to_messages.get(account)
-            if not queue or queue.empty():
+            msg_queue = self.__account_to_messages.get(account)
+            if not msg_queue or msg_queue.empty():
                 return
-            message = queue.get_nowait()
+            message = msg_queue.get_nowait()
             send_message(message, s)
         except ConnectionError as e:
             logger.warning('Error occurred on client socket during sending data. Socket=%s, error=%s', s, e)
@@ -126,7 +130,7 @@ class Server(metaclass=ServerVerifier):
             account: str = msg[PresenceFieldName.USER.value][PresenceFieldName.ACCOUNT.value]
             self.__s_to_account[s] = account
             self.__account_to_s[account] = s
-            self.__account_to_messages.setdefault(account, queue.Queue()).put(Server.__create_response(200))
+            self.__send_response(account, 200)
 
     def __handle_message_from_client(self, s: socket):
         try:
@@ -156,6 +160,7 @@ class Server(metaclass=ServerVerifier):
                     return
                 to = msg[MsgFieldName.TO.value]
                 self.__account_to_messages.setdefault(to, queue.Queue()).put(msg)
+                self.__send_response(account, 200)
             elif msg_type == MessageType.GET_CONTACTS.value:
                 pass  # self.db.get_contacts(account)
             elif msg_type == MessageType.ADD_CONTACT.value:
@@ -202,7 +207,8 @@ class Server(metaclass=ServerVerifier):
             r_list, w_list, ex_list = select.select(self.__input_sockets,
                                                     self.__output_sockets,
                                                     self.__input_sockets)
-            # This call will block the program (unless a timeout argument is passed) until some of the passed sockets are ready.
+            # This call will block the program (unless a timeout argument is passed)
+            # until some of the passed sockets are ready.
             # In this moment, the call will return three lists with sockets for specified operations.
             for sck in r_list:
                 if sck is s:
