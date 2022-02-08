@@ -3,6 +3,7 @@
 # Создайте классы «Клиент» и «Сервер», а используемые функции превратите в методы классов.
 import queue
 import select
+from datetime import datetime
 from socket import socket, AF_INET, SOCK_STREAM
 
 from repository import Repository
@@ -12,6 +13,7 @@ from common.messages import MessageType, ClientRequestFieldName, PresenceFieldNa
     ServerResponseFieldName, RequestToServer
 from common.utils import send_message, get_data
 from common.verifiers import ServerVerifier
+from server.utils import get_config
 
 logger = logging.getLogger('gb.server')
 
@@ -19,7 +21,7 @@ logger = logging.getLogger('gb.server')
 class Server(metaclass=ServerVerifier):
     __port = Port(logger)
 
-    def __init__(self, address='', port=7777):
+    def __init__(self, db_url, address='', port=7777):
         self.__address = address
         self.__port = port
         self.__started = False
@@ -30,9 +32,9 @@ class Server(metaclass=ServerVerifier):
         self.__account_to_s = {}
         # ~ when online only
         self.__account_to_messages = {}
+        self.__s_to_addr = {}
         self.__s_to_error_msgs = {}
-        # TODO: add ini config
-        self.db = Repository('sqlite:///./clients.sqlite')
+        self.db = Repository(db_url)
 
     @staticmethod
     def __validate_presence(msg) -> str:
@@ -128,7 +130,7 @@ class Server(metaclass=ServerVerifier):
             pass
 
     def __send_response(self, account, code, msg=None):
-        self.__account_to_messages.setdefault(account, queue.Queue())\
+        self.__account_to_messages.setdefault(account, queue.Queue()) \
             .put(Server.__create_response(code, msg))
 
     def __handle_error(self, s, err_code, err_msg):
@@ -167,6 +169,7 @@ class Server(metaclass=ServerVerifier):
             return
         else:
             account: str = msg[PresenceFieldName.USER.value][PresenceFieldName.ACCOUNT.value]
+            self.db.add_history(Repository.UserHistory(account, datetime.now(), self.__s_to_addr[s][0]))
             self.__s_to_account[s] = account
             self.__account_to_s[account] = s
             self.__send_response(account, ResponseCode.OK.value)
@@ -258,6 +261,7 @@ class Server(metaclass=ServerVerifier):
         if account is not None:
             Server.__remove_if_present(account, self.__account_to_s)
         Server.__remove_if_present(sck, self.__s_to_account)
+        Server.__remove_if_present(sck, self.__s_to_addr)
         Server.__remove_if_present(sck, self.__s_to_error_msgs)
 
         Server.__remove_from_list(sck, self.__input_sockets)
@@ -293,6 +297,7 @@ class Server(metaclass=ServerVerifier):
                     client.setblocking(False)
                     self.__input_sockets.append(client)
                     self.__output_sockets.append(client)
+                    self.__s_to_addr[client] = addr
                 else:
                     self.__handle_message_from_client(sck)
 
@@ -304,5 +309,7 @@ class Server(metaclass=ServerVerifier):
 
 
 if __name__ == '__main__':
-    server = Server()
+    config = get_config()
+    settings = config['SETTINGS']
+    server = Server(settings['database_url'], settings['listen_address'], int(settings['port']))
     server.start()

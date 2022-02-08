@@ -32,7 +32,7 @@
        </attribute>
        <layout class="QGridLayout" name="gridLayout_2">
         <item row="1" column="0">
-         <widget class="QTableWidget" name="tableWidget">
+         <widget class="QTableWidget" name="user_table">
           <property name="rowCount">
            <number>0</number>
           </property>
@@ -74,7 +74,13 @@
        </attribute>
        <layout class="QHBoxLayout" name="horizontalLayout_2">
         <item>
-         <widget class="QTableWidget" name="tableWidget_2">
+         <widget class="QTableWidget" name="stats_table">
+          <property name="minimumSize">
+           <size>
+            <width>900</width>
+            <height>0</height>
+           </size>
+          </property>
           <property name="rowCount">
            <number>0</number>
           </property>
@@ -123,49 +129,7 @@
            <property name="horizontalSpacing">
             <number>30</number>
            </property>
-           <item row="2" column="0">
-            <widget class="QLabel" name="label_3">
-             <property name="styleSheet">
-              <string notr="true">font: 12pt &quot;MS Shell Dlg 2&quot;;</string>
-             </property>
-             <property name="text">
-              <string>Port:</string>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="1">
-            <widget class="QLineEdit" name="blocked_ip"/>
-           </item>
-           <item row="1" column="0">
-            <widget class="QLabel" name="label_2">
-             <property name="styleSheet">
-              <string notr="true">font: 12pt &quot;MS Shell Dlg 2&quot;;</string>
-             </property>
-             <property name="text">
-              <string>Path to database:</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="1">
-            <widget class="QLineEdit" name="path_to_file"/>
-           </item>
-           <item row="2" column="1">
-            <widget class="QLineEdit" name="port"/>
-           </item>
-           <item row="0" column="1">
-            <widget class="QLineEdit" name="db_name"/>
-           </item>
-           <item row="0" column="0">
-            <widget class="QLabel" name="label">
-             <property name="styleSheet">
-              <string notr="true">font: 12pt &quot;MS Shell Dlg 2&quot;;</string>
-             </property>
-             <property name="text">
-              <string>Database name:</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="2">
+           <item row="0" column="2">
             <widget class="QPushButton" name="select_btn">
              <property name="minimumSize">
               <size>
@@ -183,17 +147,29 @@ font: 12pt &quot;MS Shell Dlg 2&quot;;</string>
              </property>
             </widget>
            </item>
-           <item row="3" column="0">
+           <item row="2" column="0">
             <widget class="QLabel" name="label_4">
+             <property name="font">
+              <font>
+               <family>MS Shell Dlg 2</family>
+               <pointsize>14</pointsize>
+               <weight>75</weight>
+               <italic>false</italic>
+               <bold>true</bold>
+              </font>
+             </property>
+             <property name="toolTipDuration">
+              <number>-1</number>
+             </property>
              <property name="styleSheet">
-              <string notr="true">font: 12pt &quot;MS Shell Dlg 2&quot;;</string>
+              <string notr="true"/>
              </property>
              <property name="text">
-              <string>Blocked IP:</string>
+              <string>Listen address</string>
              </property>
             </widget>
            </item>
-           <item row="4" column="2">
+           <item row="3" column="2">
             <widget class="QPushButton" name="save_btn">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Minimum" vsizetype="Maximum">
@@ -214,6 +190,98 @@ font: 12pt &quot;MS Shell Dlg 2&quot;;</string>
              </property>
              <property name="text">
               <string>Save</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QLineEdit" name="listen_address">
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>35</height>
+              </size>
+             </property>
+             <property name="font">
+              <font>
+               <pointsize>16</pointsize>
+              </font>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="0">
+            <widget class="QLabel" name="label_2">
+             <property name="font">
+              <font>
+               <family>MS Shell Dlg 2</family>
+               <pointsize>14</pointsize>
+               <weight>75</weight>
+               <italic>false</italic>
+               <bold>true</bold>
+              </font>
+             </property>
+             <property name="styleSheet">
+              <string notr="true"/>
+             </property>
+             <property name="text">
+              <string>Database url</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="label_3">
+             <property name="font">
+              <font>
+               <family>MS Shell Dlg 2</family>
+               <pointsize>14</pointsize>
+               <weight>75</weight>
+               <italic>false</italic>
+               <bold>true</bold>
+              </font>
+             </property>
+             <property name="styleSheet">
+              <string notr="true"/>
+             </property>
+             <property name="text">
+              <string>Port</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QLineEdit" name="port">
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>35</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>100</width>
+               <height>16777215</height>
+              </size>
+             </property>
+             <property name="font">
+              <font>
+               <pointsize>16</pointsize>
+              </font>
+             </property>
+             <property name="readOnly">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QLineEdit" name="db_url">
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>35</height>
+              </size>
+             </property>
+             <property name="font">
+              <font>
+               <pointsize>16</pointsize>
+              </font>
              </property>
             </widget>
            </item>
@@ -267,17 +335,6 @@ font: 12pt &quot;MS Shell Dlg 2&quot;;</string>
     </item>
    </layout>
   </widget>
-  <widget class="QMenuBar" name="menubar">
-   <property name="geometry">
-    <rect>
-     <x>0</x>
-     <y>0</y>
-     <width>942</width>
-     <height>21</height>
-    </rect>
-   </property>
-  </widget>
-  <widget class="QStatusBar" name="statusbar"/>
  </widget>
  <resources/>
  <connections/>

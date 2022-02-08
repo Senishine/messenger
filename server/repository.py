@@ -60,8 +60,25 @@ class Repository:
         Session = sessionmaker(bind=self.engine)
         self.session = Session()
 
+    def get_all_user_history(self):
+        return self.session.query(self.UserHistory)
+
+    def get_user_history(self, login):
+        return self.session.query(self.UserHistory).filter_by(login=login)
+
+    def add_history(self, history: UserHistory):
+        self.session.add(history)
+        self.session.commit()
+
+    def load_users(self):
+        return self.session.query(self.User)
+
     def add_user(self, user: User):
         self.session.add(user)
+        self.session.commit()
+
+    def del_user(self, login):
+        self.session.query(self.User).filter_by(login=login).delete()
         self.session.commit()
 
     def get_user(self, login: str) -> User:
@@ -107,6 +124,3 @@ if __name__ == '__main__':
     # repository.add_contact('jlo', 'tommy')
     # contacts = []
     print(list(repository.get_contacts('jlo')))  # [('madonna',), ('justin',), ('tommy',), ('rihanna',)]
-
-
-
