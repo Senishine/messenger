@@ -6,8 +6,8 @@ import time
 from queue import Queue, Empty
 from socket import socket, AF_INET, SOCK_STREAM
 from threading import Thread
-from messages import MessageType, ServerResponseFieldName, ClientRequestFieldName
-from utils import send_message, get_data
+from common.messages import MessageType, ServerResponseFieldName, ClientRequestFieldName
+from common.utils import send_message, get_data
 
 logger = logging.getLogger('gb.client')
 
@@ -17,7 +17,7 @@ class ReceiverThread(Thread):
         super().__init__()
         self.__socket = sock
         self.__responses_queue = responses_queue
-        self.__message_listener = message_listener
+        self.__message_listener = message_listener  # callback function, when messages from clients come it is called
         self.__stopped = False
 
     def stop(self):
@@ -27,27 +27,28 @@ class ReceiverThread(Thread):
     def stopped(self):
         return self.__stopped
 
-    def run(self):
+    def run(self):  # the thread reads all messages from server
         while not self.__stopped:
             data = get_data(self.__socket)
             logger.debug("Received message from server [msg=%s]", data)
+            # {'response': 201, 'alert': ['contact1', 'contact2']}
             response_code = data.get(ServerResponseFieldName.RESPONSE.value)
             if isinstance(response_code, int):
-                self.__responses_queue.put(data)
+                self.__responses_queue.put(data)  # if response from server, put into queue
                 continue
-
+            # {'action': 'msg', to: <account_name>, from:<account_name>, "message": "message", etc}
             action = data.get(ClientRequestFieldName.ACTION.value)
             if action != MessageType.MESSAGE.value:
                 print(f"Received unknown message from server msg={data}")
                 self.stop()
                 return
-            self.__message_listener(data)
+            self.__message_listener(data)  # if message from contact, invoke callback
 
 
-class SendTask:
+class SendTask:  # заполняет очередь __task_queue задачами, типа отправить presence, auth, mess контакту
     def __init__(self, msg: dict, result_callback):
         self.msg = msg
-        self.result_callback = result_callback
+        self.result_callback = result_callback  # func accepting response from server
 
 
 class SenderThread(Thread):
@@ -56,21 +57,21 @@ class SenderThread(Thread):
         super().__init__()
         self.__socket = sock
         self.__task_queue = Queue()
-        self.__responses_queue = responses_queue
+        self.__responses_queue = responses_queue  # in this program the same queue as in receiver thread
         self.__stopped = False
 
     def submit_task(self, msg: dict, callback):
-        self.__task_queue.put(SendTask(msg, callback))
+        self.__task_queue.put(SendTask(msg, callback))  # callback - func accepting response from server (put result)
 
     def run(self):
         while not self.__stopped:
             try:
-                to_send: SendTask = self.__task_queue.get(timeout=1)
-                logger.debug("Sending message to server [msg=%s]", to_send.msg)
-                send_message(to_send.msg, self.__socket)
+                task: SendTask = self.__task_queue.get(timeout=1)
+                logger.debug("Sending message to server [msg=%s]", task.msg)
+                send_message(task.msg, self.__socket)
                 response_from_server = self.__responses_queue.get()
                 logger.debug("Received response from server [msg=%s]", response_from_server)
-                to_send.result_callback(response_from_server)
+                task.result_callback(response_from_server)
             except Empty:
                 pass
 
@@ -118,7 +119,7 @@ class Client():
     @staticmethod
     def __create_get_contacts(account_name):
         message_dict = {
-            "action": ClientRequestFieldName.GET_CONTACTS.value,
+            "action": MessageType.GET_CONTACTS.value,
             "time": time.time(),
             "user_login": account_name
         }
@@ -127,7 +128,7 @@ class Client():
     @staticmethod
     def __create_add_contact(owner_login, contact_login):
         message_dict = {
-            "action": ClientRequestFieldName.ADD_CONTACT.value,
+            "action": MessageType.ADD_CONTACT.value,
             "user_id": owner_login,
             "time": time.time(),
             "user_login": contact_login
@@ -137,7 +138,7 @@ class Client():
     @staticmethod
     def __create_del_contact(owner_login, contact_login):
         message_dict = {
-            "action": ClientRequestFieldName.DEL_CONTACT.value,
+            "action": MessageType.DEL_CONTACT.value,
             "user_id": owner_login,
             "time": time.time(),
             "user_login": contact_login
@@ -169,8 +170,8 @@ class Client():
         self.__connected = True
         self.__sock = create_socket()
         self.__sock.connect((self.__address, self.__port))
-        response_queue = Queue()
 
+        response_queue = Queue()
         self.__receiver = ReceiverThread(self.__sock, response_queue, self.__message_listener)
         self.__task_sender = SenderThread(self.__sock, response_queue)
         self.__task_sender.start()
@@ -200,17 +201,22 @@ def main():
     client.login(client_name, "ignored", lambda msg: login_queue.put(msg))
 
     login_response = login_queue.get()
-    while not client.stopped():
-        friend = input('Input friend\'s name: ')
-        if friend == ':quit':
-            break
-        while True:
-            mes = input('Input your message: ')
-            if mes == ':quit':
-                break
-            client.send(friend, mes,
-                        lambda response: logger.info("Message sent to server [response=%s]", response))
-    client.await_termination()
+
+    # print(client.del_contact('tommy', lambda response: print(response)))
+    print(client.get_contact_list(lambda response: print(response)))
+
+
+    # while not client.stopped():
+    #     friend = input('Input friend\'s name: ')
+    #     if friend == ':quit':
+    #         break
+    #     while True:
+    #         mes = input('Input your message: ')
+    #         if mes == ':quit':
+    #             break
+    #         client.send(friend, mes,
+    #                     lambda response: logger.info("Message sent to server [response=%s]", response))
+    # client.await_termination()
 
 
 if __name__ == '__main__':

@@ -23,6 +23,11 @@ class ServerResponseFieldName(Enum):
     ERROR = 'error'
 
 
+class RequestToServer(Enum):
+    USER_ID = 'user_id'
+    USER_LOGIN = 'user_login'
+
+
 class MessageType(Enum):
     PRESENCE = 'presence'
     MESSAGE = 'msg'
@@ -33,6 +38,7 @@ class MessageType(Enum):
 
 class ResponseCode(Enum):
     OK = 200
+    ACCEPTED = 202
     BAD_REQUEST = 400
     UNAUTHORIZED = 401
     CONFLICT = 409

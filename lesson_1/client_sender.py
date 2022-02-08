@@ -1,6 +1,6 @@
 import time
 from socket import socket, AF_INET, SOCK_STREAM
-from utils import send_message
+from common.utils import send_message
 
 
 def send_message_to_users(account_name, room_name, message):
