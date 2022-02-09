@@ -5,15 +5,19 @@ import queue
 import select
 from socket import socket, AF_INET, SOCK_STREAM
 
+from descriptor import Port
 from log.server_log_config import logging
 from messages import MessageType, ClientRequestFieldName, PresenceFieldName, MsgFieldName, ResponseCode, \
     ServerResponseFieldName
 from utils import send_message, get_data
+from verifiers import ServerVerifier
 
 logger = logging.getLogger('gb.server')
 
 
-class Server:
+class Server(metaclass=ServerVerifier):
+    __port = Port(logger)
+
     def __init__(self, address='', port=7777):
         self.__address = address
         self.__port = port
