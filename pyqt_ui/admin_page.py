@@ -1,12 +1,10 @@
 import sys
-
 from PyQt5 import QtCore
 from PyQt5.QtCore import QRegExp
 from PyQt5.QtGui import QRegExpValidator
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QTableWidgetItem, QTableWidget, QPushButton, \
     QLineEdit, QFileDialog
 from PyQt5.uic import loadUi
-
 from server.repository import Repository
 from server.utils import get_config, get_config_path
 
@@ -67,10 +65,10 @@ class Admin(QMainWindow):
         current_row = 0
         for user in self.repository.load_users():
             self.users_table.setRowCount(current_row + 1)
-            self.users_table.setItem(current_row, 0, Admin.create_read_only_cell(user.login))
+            self.users_table.setItem(current_row, 0, Admin.create_read_only_cell((user.login)))
             self.users_table.setItem(current_row, 1, Admin.create_read_only_cell(user.name))
             self.users_table.setItem(current_row, 2, Admin.create_read_only_cell(user.surname))
-            self.users_table.setItem(current_row, 3, Admin.create_read_only_cell("unknown"))
+            self.users_table.setItem(current_row, 3, Admin.create_read_only_cell(user.birthdate))
             del_btn = QPushButton(self.users_table)
             del_btn.setText('X')
             del_btn.clicked.connect(lambda: self.del_user(user.login))

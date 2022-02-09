@@ -1,5 +1,5 @@
-from datetime import datetime
-from sqlalchemy import Column, Integer, String, ForeignKey, create_engine, DateTime, Text
+from datetime import datetime, date
+from sqlalchemy import Column, Integer, String, ForeignKey, create_engine, DateTime, Text, Date
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
@@ -13,12 +13,14 @@ class Repository:
         name = Column(String)
         surname = Column(String)
         password = Column(Text)
+        birthdate = Column(String)
 
-        def __init__(self, login, name, surname, password):
+        def __init__(self, login, name, surname, password, birthdate):
             self.login = login
             self.name = name
             self.surname = surname
             self.password = password
+            self.birthdate = birthdate
 
         def __repr__(self):
             return f'Client {self.login} with name {self.name}'
@@ -106,21 +108,5 @@ class Repository:
 
 if __name__ == '__main__':
     repository = Repository('sqlite:///./clients.sqlite')
-    # repository.add_user(Repository.User('madonna','madonna', 'lora', '123456'))
-    # repository.add_user(Repository.User('jlo','jennifer', 'lo','963852'))
-    # repository.add_user(Repository.User('justin','justin', 'timberlake','justin111'))
-    # repository.add_user(Repository.User('tommy','tom', 'kruz','terminator'))
-    #
-    # repository.add_contact('jlo', 'madonna')
-    # repository.add_contact('jlo', 'justin')
-    # repository.add_contact('jlo', 'tommy')
-    # repository.add_contact('tommy', 'justin')
-
-    # for c in repository.get_contacts('jlo'):
-    #     print(c)
-
-    # repository.del_contact('jlo', 'tommy')
-    # repository.add_contact('jlo', 'justin')
-    # repository.add_contact('jlo', 'tommy')
-    # contacts = []
-    print(list(repository.get_contacts('jlo')))  # [('madonna',), ('justin',), ('tommy',), ('rihanna',)]
+    # repository.add_user(Repository.User('madonna','madonna', 'lora', '123456', date(1958,8,16)))
+    # print(list(repository.get_contacts('jlo')))  # [('madonna',), ('justin',), ('tommy',), ('rihanna',)]
