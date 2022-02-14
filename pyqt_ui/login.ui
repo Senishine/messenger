@@ -52,6 +52,15 @@ background-color: qlineargradient(spread:pad, x1:0.029297, y1:0, x2:0.975248, y2
       <height>71</height>
      </rect>
     </property>
+    <property name="font">
+     <font>
+      <family>MS Shell Dlg 2</family>
+      <pointsize>16</pointsize>
+      <weight>50</weight>
+      <italic>false</italic>
+      <bold>false</bold>
+     </font>
+    </property>
     <property name="styleSheet">
      <string notr="true">color:rgb(255, 255, 255);
 border-radius:20px;
@@ -60,6 +69,9 @@ background-color: rgb(110, 114, 127);</string>
     </property>
     <property name="text">
      <string>Log in</string>
+    </property>
+    <property name="default">
+     <bool>true</bool>
     </property>
    </widget>
    <widget class="QLineEdit" name="login_field">
@@ -163,6 +175,12 @@ color: rgb(255, 255, 255);</string>
    </widget>
   </widget>
  </widget>
+ <tabstops>
+  <tabstop>login_field</tabstop>
+  <tabstop>password_field</tabstop>
+  <tabstop>loginbtn</tabstop>
+  <tabstop>back_btn</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

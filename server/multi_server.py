@@ -6,6 +6,8 @@ import select
 from datetime import datetime
 from socket import socket, AF_INET, SOCK_STREAM
 
+from sqlalchemy.exc import DatabaseError
+
 from repository import Repository
 from common.descriptor import Port
 from log.server_log_config import logging
@@ -154,6 +156,7 @@ class Server(metaclass=ServerVerifier):
             if not msg_queue or msg_queue.empty():
                 return
             message = msg_queue.get_nowait()
+            logger.debug('Sending message to user [login=%s, message=%s]', account, message)
             send_message(message, s)
         except ConnectionError as e:
             logger.warning('Error occurred on client socket during sending data. Socket=%s, error=%s', s, e)
@@ -190,8 +193,11 @@ class Server(metaclass=ServerVerifier):
             return
         owner: str = msg.get(RequestToServer.USER_ID.value)
         contact_login = msg.get(RequestToServer.USER_LOGIN.value)
-        self.db.add_contact(owner, contact_login)
-        self.__send_response(owner, ResponseCode.OK.value)
+        try:
+            self.db.add_contact(owner, contact_login)
+            self.__send_response(owner, ResponseCode.OK.value)
+        except DatabaseError:
+            self.__send_response(owner, ResponseCode.BAD_REQUEST.value, 'Invalid contact name')
 
     def __handle_del_contact_msg(self, s, msg, account):
         err_msg = Server.__validate_del_contact(msg, account)
@@ -200,8 +206,11 @@ class Server(metaclass=ServerVerifier):
             return
         owner: str = msg.get(RequestToServer.USER_ID.value)
         contact_login = msg.get(RequestToServer.USER_LOGIN.value)
-        self.db.del_contact(owner, contact_login)
-        self.__send_response(owner, ResponseCode.OK.value)
+        try:
+            self.db.del_contact(owner, contact_login)
+            self.__send_response(owner, ResponseCode.OK.value)
+        except DatabaseError:
+            self.__send_response(owner, ResponseCode.BAD_REQUEST.value, 'Invalid contact name')
 
     def __handle_get_contact_msg(self, s, msg, account):
         err_msg = Server.__validate_get_contact(msg, account)
