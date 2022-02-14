@@ -36,27 +36,25 @@ class ClientRepository:
         self.session.commit()
 
     def get_contact_list(self):
-        return [contact[0] for contact in self.session.query(self.MyContacts.login).all()]  #returns list of contacts instead of tuples
+        return [contact[0] for contact in
+                self.session.query(self.MyContacts.login).all()]  # returns list of contacts instead of tuples
 
-    def save_message(self, from_contact, message):
+    def save_message(self, from_contact, message, date=datetime.now()):
         message_row = self.MessageHistory(
             contact_login=from_contact,
             message=message,
-            date=datetime.now()
+            date=date
         )
         self.session.add(message_row)
         self.session.commit()
 
     def get_user_history(self, user):
-        query = self.session.query(self.MessageHistory).filter_by(contact_login=user)
-        return [(history_row.contact_login, history_row.message, history_row.date)
-                for history_row in query.all()]
+        return self.session.query(self.MessageHistory).filter_by(contact_login=user).all()
 
     def check_contact(self, contact):
         if self.session.query(self.MyContacts).filter_by(login=contact).count():
             return True
         return False
-
 
 
 if __name__ == '__main__':

@@ -1,4 +1,7 @@
 import sys
+from datetime import datetime
+
+from PyQt5.QtGui import QStandardItem, QBrush, QColor, QStandardItemModel
 
 from common.messages import ServerResponseFieldName, ResponseCode
 from log.client_log_config import logging
@@ -106,6 +109,7 @@ class AccountForm(QDialog):
     cont_list_signal = pyqtSignal(dict)
     add_contact_signal = pyqtSignal(str, dict)
     del_contact_signal = pyqtSignal(str, dict)
+    message_sent_signal = pyqtSignal(str, str, dict)
 
     def __init__(self, client: Client):
         super(AccountForm, self).__init__()
@@ -113,17 +117,22 @@ class AccountForm(QDialog):
         self.database = ClientRepository(f'sqlite:///db-{client.account_name}.sqlite')
         loadUi('account_form.ui', self)
         self.cont_list_signal.connect(self.handle_contacts_response)
-        self.contacts_list = self.findChild(QListWidget)
+        self.contacts_list = self.findChild(QListWidget, "contacts_list")
         client.get_contact_list(lambda response: self.cont_list_signal.emit(response))
-        # self.message_history = self.findChild(QTextEdit, 'mes_history')
         self.contacts_list.doubleClicked.connect(self.set_current_chat)
         self.input_contact_login = self.findChild(QtWidgets.QLineEdit)
-        # self.add_contact_btn.clicked.connect(self.add_contact_to_list)
+        self.input_message = self.findChild(QtWidgets.QTextEdit, "input_message")
+        self.chat_list = self.findChild(QtWidgets.QListView, "chat_list")
+        self.chat_model = QStandardItemModel()
+        self.chat_list.setModel(self.chat_model)
 
         self.add_contact_signal.connect(self.show_new_contact)
         self.add_contact_btn.clicked.connect(self.add_contact_to_list)
         self.del_contact_signal.connect(self.remove_contact)
         self.delete_contact_btn.clicked.connect(self.del_contact_from_list)
+
+        self.send_btn.clicked.connect(self.send_btn_clicked)
+        self.message_sent_signal.connect(self.message_sent)
 
     @pyqtSlot(dict)
     def handle_contacts_response(self, response):
@@ -134,29 +143,55 @@ class AccountForm(QDialog):
                 self.contacts_list.addItem(contact)
                 self.database.add_contact(contact)
             self.database.session.commit()
-        else:
-            pass
+
+    def send_btn_clicked(self):
+        contact = self.input_contact_login.text()
+        message = self.input_message.toPlainText()
+        if not contact or not message:
+            return
+
+        self.client.send(contact, message,
+                         lambda response: self.message_sent_signal.emit(contact, message, response))
+
+    @pyqtSlot(str, str, dict)
+    def message_sent(self, contact, message, response):
+        code = response.get(ServerResponseFieldName.RESPONSE.value)
+        if code != ResponseCode.OK.value:
+            return
+        now = datetime.now()
+        self.database.save_message(contact, message, now)
+        self.database.session.commit()
+        contact_login = self.contacts_list.currentItem().text()
+        if contact_login != contact:
+            return
+        self.__add_sent_msg_to_model(now, message)
 
     def set_current_chat(self):
+        self.chat_model.clear()
         contact_login = self.contacts_list.currentItem().text()
         data = self.database.get_user_history(contact_login)
-        data.sort(key=lambda x: x[3], reverse=True)
+        data.sort(key=lambda x: x.date, reverse=True)
         logger.info('response received %s', data)
-        for item in data[:10][::-1]:
-            print(item)
-        #     if item[1] == 'in':
-        #         self.message_history.
-        #         mess = QStandardItem(f'Входящее от {item[3].replace(microsecond=0)}:\n {item[2]}')
-        #         mess.setEditable(False)
-        #         mess.setBackground(QBrush(QColor(230, 230, 255)))
-        #         mess.setTextAlignment(Qt.AlignLeft)
-        #         self.appendRow(mess)
-        #     else:
-        #         mess = QStandardItem(f'Исходящее от {item[3].replace(microsecond=0)}:\n {item[2]}')
-        #         mess.setEditable(False)
-        #         mess.setTextAlignment(Qt.AlignRight)
-        #         mess.setBackground(QBrush(QColor(228, 242, 255)))
-        #         self.appendRow(mess)
+        acc_name = self.client.account_name
+        for message_history in data:
+            if message_history.contact_login == acc_name:
+                self.__add_received_msg_to_model(message_history.date, message_history.message)
+            else:
+                self.__add_sent_msg_to_model(message_history.date, message_history.message)
+
+    def __add_sent_msg_to_model(self, date_time, message):
+        mess = QStandardItem(f'Sent at {date_time.replace(microsecond=0)}:\n {message}')
+        mess.setEditable(False)
+        mess.setTextAlignment(Qt.AlignRight)
+        mess.setBackground(QBrush(QColor(228, 242, 255)))
+        self.chat_model.appendRow(mess)
+
+    def __add_received_msg_to_model(self, date_time, message):
+        mess = QStandardItem(f'Received at {date_time.replace(microsecond=0)}:\n {message}')
+        mess.setEditable(False)
+        mess.setBackground(QBrush(QColor(230, 230, 255)))
+        mess.setTextAlignment(Qt.AlignLeft)
+        self.appendRow(mess)
 
     def add_contact_to_list(self):
         contact = self.input_contact_login.text()
