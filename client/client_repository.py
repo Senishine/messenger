@@ -17,7 +17,7 @@ class ClientRepository:
         id = Column(Integer, primary_key=True)
         contact_login = Column(String, ForeignKey('my_contacts.login'), nullable=False)
         message = Column(Text)
-        time = Column(DateTime)
+        date = Column(DateTime)
 
     def __init__(self, url):
         self.engine = create_engine(url, echo=False, pool_recycle=7200)
@@ -49,8 +49,20 @@ class ClientRepository:
 
     def get_user_history(self, user):
         query = self.session.query(self.MessageHistory).filter_by(contact_login=user)
-        return query
+        return [(history_row.contact_login, history_row.message, history_row.date)
+                for history_row in query.all()]
+
+    def check_contact(self, contact):
+        if self.session.query(self.MyContacts).filter_by(login=contact).count():
+            return True
+        return False
 
 
-# if __name__ == '__main__':
-#     repository = ClientRepository('sqlite:///./clients_history.sqlite')
+
+if __name__ == '__main__':
+    repository = ClientRepository('sqlite:///db-jlo.sqlite')
+    # repository.add_contact('rihanna')
+    repository.add_contact('madonna')
+    repository.save_message('madonna', 'hi, jenny')
+    data = repository.session.query(repository.MessageHistory)
+    print(data)
