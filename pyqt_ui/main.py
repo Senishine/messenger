@@ -3,7 +3,7 @@ from datetime import datetime
 
 from PyQt5.QtGui import QStandardItem, QBrush, QColor, QStandardItemModel
 
-from common.messages import ServerResponseFieldName, ResponseCode
+from common.messages import ServerResponseFieldName, ResponseCode, ClientRequestFieldName, MessageType, MsgFieldName
 from log.client_log_config import logging
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt
 # from PyQt5.QtGui import QBrush, QColor, QStandardItem
@@ -110,9 +110,11 @@ class AccountForm(QDialog):
     add_contact_signal = pyqtSignal(str, dict)
     del_contact_signal = pyqtSignal(str, dict)
     message_sent_signal = pyqtSignal(str, str, dict)
+    receive_message_signal = pyqtSignal(dict)
 
     def __init__(self, client: Client):
         super(AccountForm, self).__init__()
+        self.selected_contact: str = ""
         self.client = client
         self.database = ClientRepository(f'sqlite:///db-{client.account_name}.sqlite')
         loadUi('account_form.ui', self)
@@ -133,6 +135,9 @@ class AccountForm(QDialog):
 
         self.send_btn.clicked.connect(self.send_btn_clicked)
         self.message_sent_signal.connect(self.message_sent)
+
+        self.client.subscribe_to_messages(lambda msg: self.receive_message_signal.emit(msg))
+        self.receive_message_signal.connect(self.message_received)
 
     @pyqtSlot(dict)
     def handle_contacts_response(self, response):
@@ -159,25 +164,26 @@ class AccountForm(QDialog):
         if code != ResponseCode.OK.value:
             return
         now = datetime.now()
-        self.database.save_message(contact, message, now)
+        self.database.save_message(self.client.account_name, contact, message, now)
         self.database.session.commit()
-        contact_login = self.contacts_list.currentItem().text()
-        if contact_login != contact:
+        self.input_message.clear()
+        if self.selected_contact != contact:
             return
         self.__add_sent_msg_to_model(now, message)
 
     def set_current_chat(self):
-        self.chat_model.clear()
+        self.chat_model.removeRows(0, self.chat_model.rowCount())
         contact_login = self.contacts_list.currentItem().text()
-        data = self.database.get_user_history(contact_login)
-        data.sort(key=lambda x: x.date, reverse=True)
+        self.selected_contact = contact_login
+        data = self.database.get_message_history()
+        data.sort(key=lambda x: x.date, reverse=False)
         logger.info('response received %s', data)
         acc_name = self.client.account_name
         for message_history in data:
-            if message_history.contact_login == acc_name:
-                self.__add_received_msg_to_model(message_history.date, message_history.message)
-            else:
+            if message_history.from_acc == acc_name and message_history.to_acc == self.selected_contact:
                 self.__add_sent_msg_to_model(message_history.date, message_history.message)
+            elif message_history.to_acc == acc_name and message_history.from_acc == self.selected_contact:
+                self.__add_received_msg_to_model(message_history.date, message_history.message)
 
     def __add_sent_msg_to_model(self, date_time, message):
         mess = QStandardItem(f'Sent at {date_time.replace(microsecond=0)}:\n {message}')
@@ -191,7 +197,7 @@ class AccountForm(QDialog):
         mess.setEditable(False)
         mess.setBackground(QBrush(QColor(230, 230, 255)))
         mess.setTextAlignment(Qt.AlignLeft)
-        self.appendRow(mess)
+        self.chat_model.appendRow(mess)
 
     def add_contact_to_list(self):
         contact = self.input_contact_login.text()
@@ -209,6 +215,28 @@ class AccountForm(QDialog):
             self.database.session.commit()
         if response.get(ServerResponseFieldName.RESPONSE.value) == ResponseCode.BAD_REQUEST.value:
             self.label_3.setText('This contact is absent in messenger')
+
+    @pyqtSlot(dict)
+    def message_received(self, msg):
+        if not msg or not msg.get(ClientRequestFieldName.ACTION) != MessageType.MESSAGE:
+            return
+
+        if msg.get(MsgFieldName.TO.value) != self.client.account_name:
+            return
+
+        contact = msg.get(MsgFieldName.FROM.value)
+        message = msg.get(MsgFieldName.MESSAGE.value)
+        time = msg.get(MsgFieldName.TIME.value)
+
+        if not contact or not message:
+            return
+        time = datetime.now() if not time else datetime.fromtimestamp(time)
+        self.database.save_message(contact, self.client.account_name, message, time)
+        self.database.session.commit()
+
+        if self.selected_contact != contact:
+            return
+        self.__add_received_msg_to_model(time, message)
 
     def del_contact_from_list(self):
         contact = self.input_contact_login.text()

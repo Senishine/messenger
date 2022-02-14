@@ -15,7 +15,8 @@ class ClientRepository:
     class MessageHistory(Base):
         __tablename__ = 'history'
         id = Column(Integer, primary_key=True)
-        contact_login = Column(String, ForeignKey('my_contacts.login'), nullable=False)
+        to_acc = Column(String, ForeignKey('my_contacts.login'), nullable=False)
+        from_acc = Column(String, ForeignKey('my_contacts.login'), nullable=False)
         message = Column(Text)
         date = Column(DateTime)
 
@@ -39,17 +40,18 @@ class ClientRepository:
         return [contact[0] for contact in
                 self.session.query(self.MyContacts.login).all()]  # returns list of contacts instead of tuples
 
-    def save_message(self, from_contact, message, date=datetime.now()):
+    def save_message(self, from_acc, to_acc, message, date=datetime.now()):
         message_row = self.MessageHistory(
-            contact_login=from_contact,
+            from_acc=from_acc,
+            to_acc=to_acc,
             message=message,
             date=date
         )
         self.session.add(message_row)
         self.session.commit()
 
-    def get_user_history(self, user):
-        return self.session.query(self.MessageHistory).filter_by(contact_login=user).all()
+    def get_message_history(self):
+        return self.session.query(self.MessageHistory).all()
 
     def check_contact(self, contact):
         if self.session.query(self.MyContacts).filter_by(login=contact).count():
@@ -61,6 +63,6 @@ if __name__ == '__main__':
     repository = ClientRepository('sqlite:///db-jlo.sqlite')
     # repository.add_contact('rihanna')
     repository.add_contact('madonna')
-    repository.save_message('madonna', 'hi, jenny')
+    repository.save_message('madonna', 'rihanna', 'hi, jenny')
     data = repository.session.query(repository.MessageHistory)
     print(data)

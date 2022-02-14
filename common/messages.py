@@ -9,6 +9,7 @@ class MsgFieldName(Enum):
     FROM = 'from'
     TO = 'to'
     MESSAGE = 'message'
+    TIME = 'time'
 
 
 class PresenceFieldName(Enum):

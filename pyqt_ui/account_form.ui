@@ -86,22 +86,17 @@ background-color: rgb(110, 114, 127);</string>
           <number>30</number>
          </property>
          <item>
-          <widget class="QTextEdit" name="mes_history">
-           <property name="minimumSize">
-            <size>
-             <width>350</width>
-             <height>0</height>
-            </size>
-           </property>
+          <widget class="QListView" name="chat_list">
            <property name="styleSheet">
-            <string notr="true">background-color: rgb(249, 225, 255);
-border-radius:15px;
-font: 12pt &quot;MS Shell Dlg 2&quot;;</string>
+            <string notr="true">font: 14pt &quot;MS Shell Dlg 2&quot;;
+background-color: rgb(198, 188, 200);
+border-radius:30px;
+</string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QTextEdit" name="input_text_field">
+          <widget class="QTextEdit" name="input_message">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
              <horstretch>0</horstretch>
@@ -166,6 +161,9 @@ background-color: rgb(110, 114, 127);</string>
              </property>
              <property name="text">
               <string>Send</string>
+             </property>
+             <property name="default">
+              <bool>true</bool>
              </property>
             </widget>
            </item>

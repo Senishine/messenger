@@ -156,6 +156,7 @@ class Server(metaclass=ServerVerifier):
             if not msg_queue or msg_queue.empty():
                 return
             message = msg_queue.get_nowait()
+            logger.debug('Sending message to user [login=%s, message=%s]', account, message)
             send_message(message, s)
         except ConnectionError as e:
             logger.warning('Error occurred on client socket during sending data. Socket=%s, error=%s', s, e)

@@ -40,7 +40,7 @@ class ReceiverThread(Thread):
             # {'action': 'msg', to: <account_name>, from:<account_name>, "message": "message", etc}
             action = data.get(ClientRequestFieldName.ACTION.value)
             if action != MessageType.MESSAGE.value:
-                print(f"Received unknown message from server msg={data}")
+                logger.info('Received unknown message from server msg=%s', data)
                 self.stop()
                 return
             if self.__messages_queue.empty() and self.__message_listener is not None:
@@ -199,7 +199,7 @@ class Client:
     def subscribe_to_messages(self, listener):
         if self.__receiver is None:
             raise ValueError('Client is not logged in')
-        self.__receiver.subscribe(listener)
+        self.__receiver.subscribe_to_messages(listener)
 
     def get_contact_list(self, result):
         self.__task_sender.submit_task(self.__create_get_contacts(self.__account), result)
