@@ -1,7 +1,6 @@
 # *В следующем уроке мы будем изучать дескрипторы и метаклассы.
 # Но вы уже сейчас можете перевести часть кода из функционального стиля в объектно-ориентированный.
 # Создайте классы «Клиент» и «Сервер», а используемые функции превратите в методы классов.
-import binascii
 import hashlib
 import hmac
 import os
@@ -16,25 +15,55 @@ from repository import Repository
 from common.descriptor import Port
 from log.server_log_config import logging
 from common.messages import MessageType, ClientRequestFieldName, UserFieldName, MsgFieldName, ResponseCode, \
-    ServerResponseFieldName, RequestToServer, AuthenticateFieldName
+    RequestToServer, AuthenticateFieldName
 from common.utils import send_message, get_data
 from common.verifiers import ServerVerifier
+from server.server_utils import remove_if_present, validate_get_contact, validate_del_contact, validate_add_contact, \
+    validate_user_msg, validate_authenticate, validate_sign_up, validate_presence, remove_from_list, create_response
 from server.utils import get_config
 
 logger = logging.getLogger('gb.server')
+
+
+class Request:
+    def __init__(self, sock: socket, msg: dict):
+        self.sock: socket = sock
+        self.msg: dict = msg
+        self.account = None
+
+
+def login_required(method):
+    def wrapper(self, request):
+        owner_account = self._s_to_account.get(request.sock)
+        if not owner_account:
+            self.__handle_error(request.sock, ResponseCode.UNAUTHORIZED.value, 'No presence message received')
+            return
+        request.account = owner_account
+        method(self, request)
+
+    return wrapper
 
 
 class Server(metaclass=ServerVerifier):
     __port = Port(logger)
 
     def __init__(self, db_url, address='', port=7777):
+        self.__handlers = {
+            MessageType.AUTHENTICATE.value: self.__handle_authenticate_msg,
+            MessageType.PRESENCE.value: self.__handle_presence_msg,
+            MessageType.SIGN_UP.value: self.__handle_sign_up_msg,
+            MessageType.MESSAGE.value: self.__handle_user_msg,
+            MessageType.GET_CONTACTS.value: self.__handle_get_contact_msg,
+            MessageType.ADD_CONTACT.value: self.__handle_add_contact_msg,
+            MessageType.DEL_CONTACT.value: self.__handle_del_contact_msg
+        }
         self.__address = address
         self.__port = port
         self.__started = False
         self.__input_sockets = []  # sockets which should be checked for available data to read (на готовность к вводу)
         self.__output_sockets = []  # sockets which should be checked for readiness to write data (проверяются на готовность к выводу)
         # when online only
-        self.__s_to_account = {}
+        self._s_to_account = {}
         self.__account_to_s = {}
         # ~ when online only
         self.__account_to_messages = {}
@@ -43,145 +72,19 @@ class Server(metaclass=ServerVerifier):
         self.__s_to_error_msgs = {}
         self.db = Repository(db_url)
 
-    @staticmethod
-    def __validate_authenticate(msg) -> str:
-        if not msg:
-            return "Empty message"
-        if msg.get(ClientRequestFieldName.ACTION.value) != MessageType.AUTHENTICATE.value:
-            return f"Message type is not {MessageType.AUTHENTICATE.value}"
-        if not msg.get(UserFieldName.USER.value) or \
-                not msg.get(UserFieldName.USER.value).get(UserFieldName.ACCOUNT.value):
-            return "Account name is not filled"
-        if not msg.get(UserFieldName.USER.value).get(AuthenticateFieldName.PASSWORD.value):
-            return "Password is not filled"
-        return ""
-
-    @staticmethod
-    def __validate_sign_up(msg) -> str:
-        if not msg:
-            return "Empty message"
-        if msg.get(ClientRequestFieldName.ACTION.value) != MessageType.SIGN_UP.value:
-            return f"Message type is not {MessageType.SIGN_UP.value}"
-        if not msg.get(UserFieldName.USER.value):
-            return "User information is not filled"
-        if not msg.get(UserFieldName.USER.value).get(UserFieldName.LOGIN.value):
-            return "Login is not filled"
-        if not msg.get(UserFieldName.USER.value).get(AuthenticateFieldName.PASSWORD.value):
-            return "Password is not filled"
-        if not msg.get(UserFieldName.USER.value).get(UserFieldName.NAME.value):
-            return "Name is not filled"
-        if not msg.get(UserFieldName.USER.value).get(UserFieldName.SURNAME.value):
-            return "Surname is not filled"
-        if not msg.get(UserFieldName.USER.value).get(UserFieldName.BIRTHDATE.value):
-            return "Birthdate is not filled"
-        return ""
-
-    @staticmethod
-    def __validate_presence(msg) -> str:
-        if not msg:
-            return "Empty message"
-        if msg.get(ClientRequestFieldName.ACTION.value) != MessageType.PRESENCE.value:
-            return f"Message type is not {MessageType.PRESENCE.value}"
-        if not msg.get(UserFieldName.USER.value) or \
-                not msg.get(UserFieldName.USER.value).get(UserFieldName.ACCOUNT.value):
-            return "Account name is not filled"
-        return ""
-
-    @staticmethod
-    def __validate_add_contact(msg, account) -> str:
-        if not msg:
-            return "Empty message"
-        if msg.get(ClientRequestFieldName.ACTION.value) != MessageType.ADD_CONTACT.value:
-            return f"Message type is not {MessageType.ADD_CONTACT.value}"
-        if not msg.get(RequestToServer.USER_ID.value) or \
-                not msg.get(RequestToServer.USER_LOGIN.value):
-            return "Login is not filled"
-        if msg.get(RequestToServer.USER_ID.value) != account:
-            return "'User_id' field is not equal logged in user"
-        return ""
-
-    @staticmethod
-    def __validate_del_contact(msg, account) -> str:
-        if not msg:
-            return "Empty message"
-        if msg.get(ClientRequestFieldName.ACTION.value) != MessageType.DEL_CONTACT.value:
-            return f"Message type is not {MessageType.DEL_CONTACT.value}"
-        if not msg.get(RequestToServer.USER_ID.value) or \
-                not msg.get(RequestToServer.USER_LOGIN.value):
-            return "Login is not filled"
-        if msg.get(RequestToServer.USER_ID.value) != account:
-            return "'User_id' field is not equal logged in user"
-        return ""
-
-    @staticmethod
-    def __validate_get_contact(msg, account) -> str:
-        if not msg:
-            return "Empty message"
-        if msg.get(ClientRequestFieldName.ACTION.value) != MessageType.GET_CONTACTS.value:
-            return f"Message type is not {MessageType.GET_CONTACTS.value}"
-        if not msg.get(RequestToServer.USER_LOGIN.value):
-            return "Login is not filled"
-        if msg.get(RequestToServer.USER_LOGIN.value) != account:
-            return "'User_id' field is not equal logged in user"
-        return ""
-
-    @staticmethod
-    def __validate_msg(msg, account) -> str:
-        if not msg:
-            return "Empty message"
-        if msg.get(ClientRequestFieldName.ACTION.value) != MessageType.MESSAGE.value:
-            return f"Message type is not {MessageType.MESSAGE.value}"
-        if not msg.get(MsgFieldName.TO.value):
-            return "No 'to' field"
-        if not msg.get(MsgFieldName.MESSAGE.value):
-            return "No 'message' field"
-        if msg.get(MsgFieldName.FROM.value) != account:
-            return "'From' field is not equal logged in user"
-        return ""
-
-    @staticmethod
-    def __create_response(code=ResponseCode.OK.value, msg=None):
-        logger.info('Creating response for client [code=%s, msg=%s]', code, msg)
-        assert isinstance(code, int), 'code is not an integer'
-        data = {
-            ServerResponseFieldName.RESPONSE.value: code
-        }
-
-        if msg is None:
-            return data
-        if 400 <= code <= 600:
-            data[ServerResponseFieldName.ERROR.value] = msg
-        else:
-            data[ServerResponseFieldName.ALERT.value] = msg
-
-        return data
-
-    @staticmethod
-    def __remove_if_present(key, d: dict):
-        value = d.get(key)
-        if value is not None:
-            del d[key]
-
-    @staticmethod
-    def __remove_from_list(obj, l: list):
-        try:
-            l.remove(obj)
-        except ValueError:
-            pass
-
     def __send_response_to_socket(self, sock, code, msg=None):
         self.__socket_to_messages.setdefault(sock, queue.Queue()) \
-            .put(Server.__create_response(code, msg))
+            .put(create_response(code, msg))
 
     def __send_response(self, account, code, msg=None):
         self.__account_to_messages.setdefault(account, queue.Queue()) \
-            .put(Server.__create_response(code, msg))
+            .put(create_response(code, msg))
 
     def __handle_error(self, s, err_code, err_msg):
         if self.__s_to_error_msgs.get(s):
             return
-        self.__s_to_error_msgs[s] = Server.__create_response(err_code, err_msg)
-        Server.__remove_from_list(s, self.__input_sockets)
+        self.__s_to_error_msgs[s] = create_response(err_code, err_msg)
+        remove_from_list(s, self.__input_sockets)
 
     def __handle_writable_socket(self, s: socket):
         try:
@@ -197,7 +100,7 @@ class Server(metaclass=ServerVerifier):
                 logger.debug('Sending message to socket [socket=%s, message=%s]', s, message)
                 send_message(message, s)
 
-            account = self.__s_to_account.get(s)
+            account = self._s_to_account.get(s)
             if not account:
                 # no account association -> presence not sent yet
                 return
@@ -211,31 +114,33 @@ class Server(metaclass=ServerVerifier):
             logger.warning('Error occurred on client socket during sending data. Socket=%s, error=%s', s, e)
             self.__cleanup_socket(s)
 
-    def __handle_presence_msg(self, s, msg):
-        err_msg = Server.__validate_presence(msg)
+    def __handle_presence_msg(self, request):
+        err_msg = validate_presence(request.msg)
         if err_msg:
-            self.__handle_error(s, ResponseCode.BAD_REQUEST.value, err_msg)
+            self.__handle_error(request.sock, ResponseCode.BAD_REQUEST.value, err_msg)
             return
-        if self.__s_to_account.get(s):
-            self.__handle_error(s, ResponseCode.CONFLICT.value, 'Connection with this login is already exists')
+        if self._s_to_account.get(request.sock):
+            self.__handle_error(request.sock, ResponseCode.CONFLICT.value,
+                                'Connection with this login is already exists')
             return
         else:
-            account: str = msg[UserFieldName.USER.value][UserFieldName.ACCOUNT.value]
+            account: str = request.msg[UserFieldName.USER.value][UserFieldName.ACCOUNT.value]
             self.__send_response(account, ResponseCode.OK.value)
 
-    def __handle_sign_up_msg(self, s, msg):
-        err_msg = Server.__validate_sign_up(msg)
+    def __handle_sign_up_msg(self, request):
+        err_msg = validate_sign_up(request.msg)
         if err_msg:
-            self.__handle_error(s, ResponseCode.BAD_REQUEST.value, err_msg)
+            self.__handle_error(request.sock, ResponseCode.BAD_REQUEST.value, err_msg)
             return
-        elif self.__s_to_account.get(s):
-            self.__handle_error(s, ResponseCode.CONFLICT.value, 'Connection with this login is already exists')
+        elif self._s_to_account.get(request.sock):
+            self.__handle_error(request.sock, ResponseCode.CONFLICT.value,
+                                'Connection with this login is already exists')
             return
-        login: str = msg.get(UserFieldName.USER.value).get(UserFieldName.LOGIN.value)
-        password = msg.get(UserFieldName.USER.value).get(AuthenticateFieldName.PASSWORD.value)
-        name = msg.get(UserFieldName.USER.value).get(UserFieldName.NAME.value)
-        surname = msg.get(UserFieldName.USER.value).get(UserFieldName.SURNAME.value)
-        birthdate = msg.get(UserFieldName.USER.value).get(UserFieldName.BIRTHDATE.value)
+        login: str = request.msg.get(UserFieldName.USER.value).get(UserFieldName.LOGIN.value)
+        password = request.msg.get(UserFieldName.USER.value).get(AuthenticateFieldName.PASSWORD.value)
+        name = request.msg.get(UserFieldName.USER.value).get(UserFieldName.NAME.value)
+        surname = request.msg.get(UserFieldName.USER.value).get(UserFieldName.SURNAME.value)
+        birthdate = request.msg.get(UserFieldName.USER.value).get(UserFieldName.BIRTHDATE.value)
         user = None
         try:
             user = self.db.get_user(login)
@@ -248,22 +153,23 @@ class Server(metaclass=ServerVerifier):
         salt = os.urandom(16)
         hash_str = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt, 100000)
         self.db.sign_up(login, name, surname, hash_str, salt, birthdate)
-        self.db.add_history(Repository.UserHistory(login, datetime.now(), self.__s_to_addr[s][0]))
-        self.__s_to_account[s] = login
-        self.__account_to_s[login] = s
+        self.db.add_history(Repository.UserHistory(login, datetime.now(), self.__s_to_addr[request.sock][0]))
+        self._s_to_account[request.sock] = login
+        self.__account_to_s[login] = request.sock
         self.__send_response(login, ResponseCode.OK.value)
         logger.info('Login is signed up [login=%s]', login)
 
-    def __handle_authenticate_msg(self, s, msg):
-        err_msg = Server.__validate_authenticate(msg)
+    def __handle_authenticate_msg(self, request):
+        err_msg = validate_authenticate(request.msg)
         if err_msg:
-            self.__handle_error(s, ResponseCode.BAD_REQUEST.value, err_msg)
+            self.__handle_error(request.sock, ResponseCode.BAD_REQUEST.value, err_msg)
             return
-        elif self.__s_to_account.get(s):
-            self.__handle_error(s, ResponseCode.CONFLICT.value, 'Connection with this login is already exists')
+        elif self._s_to_account.get(request.sock):
+            self.__handle_error(request.sock, ResponseCode.CONFLICT.value,
+                                'Connection with this login is already exists')
             return
-        account: str = msg.get(UserFieldName.USER.value).get(UserFieldName.ACCOUNT.value)
-        client_pass = msg.get(UserFieldName.USER.value).get(AuthenticateFieldName.PASSWORD.value)
+        account: str = request.msg.get(UserFieldName.USER.value).get(UserFieldName.ACCOUNT.value)
+        client_pass = request.msg.get(UserFieldName.USER.value).get(AuthenticateFieldName.PASSWORD.value)
         user = None
         try:
             user = self.db.get_user(account)
@@ -277,55 +183,59 @@ class Server(metaclass=ServerVerifier):
         salt = user.salt
         hash_str = hashlib.pbkdf2_hmac('sha256', client_pass.encode('utf-8'), salt, 100000)
         if hmac.compare_digest(hash_str, self.db.get_hash(account)):
-            self.db.add_history(Repository.UserHistory(account, datetime.now(), self.__s_to_addr[s][0]))
-            self.__s_to_account[s] = account
-            self.__account_to_s[account] = s
+            self.db.add_history(Repository.UserHistory(account, datetime.now(), self.__s_to_addr[request.sock][0]))
+            self._s_to_account[request.sock] = account
+            self.__account_to_s[account] = request.sock
             self.__send_response(account, ResponseCode.OK.value)
         else:
             logger.debug('The user [login=%s] inputted incorrect password', account)
-            self.__send_response_to_socket(s, ResponseCode.BAD_REQUEST.value, 'Password is incorrect')
+            self.__send_response_to_socket(request.sock, ResponseCode.BAD_REQUEST.value, 'Password is incorrect')
 
-    def __handle_user_msg(self, s, msg, account):
-        err_msg = Server.__validate_msg(msg, account)
+    @login_required
+    def __handle_user_msg(self, request):
+        err_msg = validate_user_msg(request.msg, request.account)
         if err_msg:
-            self.__handle_error(s, ResponseCode.BAD_REQUEST.value, err_msg)
+            self.__handle_error(request.sock, ResponseCode.BAD_REQUEST.value, err_msg)
             return
-        to = msg[MsgFieldName.TO.value]
-        self.__account_to_messages.setdefault(to, queue.Queue()).put(msg)
-        self.__send_response(account, ResponseCode.OK.value)
+        to = request.msg[MsgFieldName.TO.value]
+        self.__account_to_messages.setdefault(to, queue.Queue()).put(request.msg)
+        self.__send_response(request.account, ResponseCode.OK.value)
 
-    def __handle_add_contact_msg(self, s, msg, account):
-        err_msg = Server.__validate_add_contact(msg, account)
+    @login_required
+    def __handle_add_contact_msg(self, request):
+        err_msg = validate_add_contact(request.msg, request.account)
         if err_msg:
-            self.__handle_error(s, ResponseCode.BAD_REQUEST.value, err_msg)
+            self.__handle_error(request.sock, ResponseCode.BAD_REQUEST.value, err_msg)
             return
-        owner: str = msg.get(RequestToServer.USER_ID.value)
-        contact_login = msg.get(RequestToServer.USER_LOGIN.value)
+        owner: str = request.msg.get(RequestToServer.USER_ID.value)
+        contact_login = request.msg.get(RequestToServer.USER_LOGIN.value)
         try:
             self.db.add_contact(owner, contact_login)
             self.__send_response(owner, ResponseCode.OK.value)
         except DatabaseError:
             self.__send_response(owner, ResponseCode.BAD_REQUEST.value, 'Invalid contact name')
 
-    def __handle_del_contact_msg(self, s, msg, account):
-        err_msg = Server.__validate_del_contact(msg, account)
+    @login_required
+    def __handle_del_contact_msg(self, request):
+        err_msg = validate_del_contact(request.msg, request.account)
         if err_msg:
-            self.__handle_error(s, ResponseCode.BAD_REQUEST.value, err_msg)
+            self.__handle_error(request.sock, ResponseCode.BAD_REQUEST.value, err_msg)
             return
-        owner: str = msg.get(RequestToServer.USER_ID.value)
-        contact_login = msg.get(RequestToServer.USER_LOGIN.value)
+        owner: str = request.msg.get(RequestToServer.USER_ID.value)
+        contact_login = request.msg.get(RequestToServer.USER_LOGIN.value)
         try:
             self.db.del_contact(owner, contact_login)
             self.__send_response(owner, ResponseCode.OK.value)
         except DatabaseError:
             self.__send_response(owner, ResponseCode.BAD_REQUEST.value, 'Invalid contact name')
 
-    def __handle_get_contact_msg(self, s, msg, account):
-        err_msg = Server.__validate_get_contact(msg, account)
+    @login_required
+    def __handle_get_contact_msg(self, request):
+        err_msg = validate_get_contact(request.msg, request.account)
         if err_msg:
-            self.__handle_error(s, ResponseCode.BAD_REQUEST.value, err_msg)
+            self.__handle_error(request.sock, ResponseCode.BAD_REQUEST.value, err_msg)
             return
-        owner: str = msg.get(RequestToServer.USER_LOGIN.value)
+        owner: str = request.msg.get(RequestToServer.USER_LOGIN.value)
         contacts = self.db.get_contacts(owner)
         converted = map(lambda it: "\'" + str(it[0]) + "\'", contacts)
         self.__send_response(owner, ResponseCode.ACCEPTED.value, f"[{','.join(converted)}]")
@@ -343,39 +253,14 @@ class Server(metaclass=ServerVerifier):
                 return
 
             msg_type = msg.get(ClientRequestFieldName.ACTION.value)
-
-            if msg_type == MessageType.AUTHENTICATE.value:
-                self.__handle_authenticate_msg(s, msg)
-                return
-
-            if msg_type == MessageType.PRESENCE.value:
-                self.__handle_presence_msg(s, msg)
-                return
-
-            if msg_type == MessageType.SIGN_UP.value:
-                self.__handle_sign_up_msg(s, msg)
-                return
-
-            owner_account = self.__s_to_account.get(s)
-            if not owner_account:
-                self.__handle_error(s, ResponseCode.UNAUTHORIZED.value, 'No presence message received')
-                return
-
-            if msg_type == MessageType.MESSAGE.value:
-                self.__handle_user_msg(s, msg, owner_account)
-
-            elif msg_type == MessageType.GET_CONTACTS.value:
-                self.__handle_get_contact_msg(s, msg, owner_account)
-
-            elif msg_type == MessageType.ADD_CONTACT.value:
-                self.__handle_add_contact_msg(self, msg, owner_account)
-
-            elif msg_type == MessageType.DEL_CONTACT.value:
-                self.__handle_del_contact_msg(s, msg, owner_account)
-
-            else:
-                self.__handle_error(s, ResponseCode.BAD_REQUEST.value, 'Unsupported message type')
-                return
+            request = Request(s, msg)
+            handler = self.__handlers.setdefault(
+                msg_type,
+                lambda r: self.__handle_error(r.sock,
+                                              ResponseCode.BAD_REQUEST.value,
+                                              'Unsupported message type')
+            )
+            handler(request)
         except ConnectionError as e:
             logger.warning('Error occurred on client socket during receiving data. Socket=%s, error=%s', s, e)
             self.__cleanup_socket(s)
@@ -384,15 +269,16 @@ class Server(metaclass=ServerVerifier):
             self.__handle_error(s, ResponseCode.INTERNAL_SERVER_ERROR.value, 'Server error')
 
     def __cleanup_socket(self, sck):
-        account = self.__s_to_account.get(sck)
+        account = self._s_to_account.get(sck)
         if account is not None:
-            Server.__remove_if_present(account, self.__account_to_s)
-        Server.__remove_if_present(sck, self.__s_to_account)
-        Server.__remove_if_present(sck, self.__s_to_addr)
-        Server.__remove_if_present(sck, self.__s_to_error_msgs)
+            remove_if_present(account, self.__account_to_s)
+        remove_if_present(sck, self._s_to_account)
+        remove_if_present(sck, self.__socket_to_messages)
+        remove_if_present(sck, self.__s_to_addr)
+        remove_if_present(sck, self.__s_to_error_msgs)
 
-        Server.__remove_from_list(sck, self.__input_sockets)
-        Server.__remove_from_list(sck, self.__output_sockets)
+        remove_from_list(sck, self.__input_sockets)
+        remove_from_list(sck, self.__output_sockets)
 
         logger.info('Socket %s was closed, remaining: input=%s, output=%s, accounts=%s, error_sockets=%s',
                     sck, len(self.__input_sockets), len(self.__output_sockets),
