@@ -38,6 +38,7 @@ class Server(metaclass=ServerVerifier):
         self.__account_to_s = {}
         # ~ when online only
         self.__account_to_messages = {}
+        self.__socket_to_messages = {}
         self.__s_to_addr = {}
         self.__s_to_error_msgs = {}
         self.db = Repository(db_url)
@@ -168,6 +169,10 @@ class Server(metaclass=ServerVerifier):
         except ValueError:
             pass
 
+    def __send_response_to_socket(self, sock, code, msg=None):
+        self.__socket_to_messages.setdefault(sock, queue.Queue()) \
+            .put(Server.__create_response(code, msg))
+
     def __send_response(self, account, code, msg=None):
         self.__account_to_messages.setdefault(account, queue.Queue()) \
             .put(Server.__create_response(code, msg))
@@ -185,6 +190,13 @@ class Server(metaclass=ServerVerifier):
                 send_message(socket_error, s)
                 self.__cleanup_socket(s)
                 return
+
+            messages = self.__socket_to_messages.get(s)
+            if messages and not messages.empty():
+                message = messages.get_nowait()
+                logger.debug('Sending message to socket [socket=%s, message=%s]', s, message)
+                send_message(message, s)
+
             account = self.__s_to_account.get(s)
             if not account:
                 # no account association -> presence not sent yet
@@ -271,7 +283,7 @@ class Server(metaclass=ServerVerifier):
             self.__send_response(account, ResponseCode.OK.value)
         else:
             logger.debug('The user [login=%s] inputted incorrect password', account)
-            self.__send_response(account, ResponseCode.BAD_REQUEST.value, 'Password is incorrect')
+            self.__send_response_to_socket(s, ResponseCode.BAD_REQUEST.value, 'Password is incorrect')
 
     def __handle_user_msg(self, s, msg, account):
         err_msg = Server.__validate_msg(msg, account)
