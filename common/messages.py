@@ -4,6 +4,9 @@ from enum import Enum
 class ClientRequestFieldName(Enum):
     ACTION = 'action'
 
+class AuthenticateFieldName(Enum):
+    PASSWORD = "password"
+
 
 class MsgFieldName(Enum):
     FROM = 'from'
@@ -12,9 +15,13 @@ class MsgFieldName(Enum):
     TIME = 'time'
 
 
-class PresenceFieldName(Enum):
+class UserFieldName(Enum):
     USER = 'user'
     ACCOUNT = 'account_name'
+    LOGIN = 'login'
+    NAME = 'name'
+    SURNAME = 'surname'
+    BIRTHDATE = 'birthdate'
 
 
 class ServerResponseFieldName(Enum):
@@ -35,6 +42,8 @@ class MessageType(Enum):
     GET_CONTACTS = 'get_contacts'
     ADD_CONTACT = 'add_contact'
     DEL_CONTACT = 'del_contact'
+    AUTHENTICATE = "authenticate"
+    SIGN_UP = "sign_up"
 
 
 class ResponseCode(Enum):

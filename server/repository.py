@@ -1,6 +1,6 @@
 import sqlite3
 from datetime import datetime, date
-from sqlalchemy import Column, Integer, String, ForeignKey, create_engine, DateTime, Text, event
+from sqlalchemy import Column, Integer, String, ForeignKey, create_engine, DateTime, event, LargeBinary
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import DatabaseError
 from sqlalchemy.ext.declarative import declarative_base
@@ -23,14 +23,16 @@ class Repository:
         login = Column(String, primary_key=True)
         name = Column(String)
         surname = Column(String)
-        password = Column(Text)
+        password_hash = Column(LargeBinary)
+        salt = Column(LargeBinary)
         birthdate = Column(String)
 
-        def __init__(self, login, name, surname, password, birthdate):
+        def __init__(self, login, name, surname, password, salt, birthdate):
             self.login = login
             self.name = name
             self.surname = surname
-            self.password = password
+            self.password_hash = password
+            self.salt = salt
             self.birthdate = birthdate
 
         def __repr__(self):
@@ -100,7 +102,7 @@ class Repository:
         self.__exec(lambda: self.session.query(self.User).filter_by(login=login).delete())
 
     def get_user(self, login: str) -> User:
-        return self.session.query(self.User).filter_by(login=login)
+        return self.session.query(self.User).filter_by(login=login).first()
 
     def connect_to_messenger(self, client_login, ip_address):
         user_history = self.UserHistory(client_login, ip_address, datetime.now())
@@ -118,22 +120,26 @@ class Repository:
     def get_contacts(self, owner: str):
         return self.session.query(self.Contact.contact_login).filter_by(owner_login=owner)
 
-    def user_existence_check(self, login):
-        if self.session.query(self.User).filter_by(login=login):
-            return True
+    def get_hash(self, login):
+        user = self.session.query(self.User).filter_by(login=login).first()
+        return user.password_hash
+
+    def sign_up(self, login, name, surname, pass_hash, salt, birthdate):
+        user_row = self.User(login=login, name=name,surname=surname, password=pass_hash, salt=salt,birthdate=birthdate)
+        self.__exec(lambda: self.session.add(user_row))
 
 
 if __name__ == '__main__':
     repository = Repository('sqlite:///./clients.sqlite')
-    repository.add_user(Repository.User('rihanna','rihanna', 'fendi', '55555', date(1988,2,20)))
-    repository.add_user(Repository.User('jlo','jennifer', 'lo','963852', date(1958,8,16)))
-    repository.add_user(Repository.User('justin','justin', 'timberlake','justin111', date(1978,8,16)))
-    repository.add_user(Repository.User('tommy','tom', 'kruz','terminator', date(1960,8,16)))
-
-    repository.add_contact('jlo', 'rihanna')
-    repository.add_contact('jlo', 'justin')
-    repository.add_contact('jlo', 'tommy')
+    # repository.add_user(Repository.User('rihanna','rihanna', 'fendi', '55555', date(1988,2,20)))
+    # repository.add_user(Repository.User('jlo','jennifer', 'lo','963852', date(1958,8,16)))
+    # repository.add_user(Repository.User('justin','justin', 'timberlake','justin111', date(1978,8,16)))
+    # repository.add_user(Repository.User('tommy','tom', 'kruz','terminator', date(1960,8,16)))
+    #
+    # repository.add_contact('jlo', 'rihanna')
+    # repository.add_contact('jlo', 'justin')
+    # repository.add_contact('jlo', 'tommy')
 
     # repository.add_contact('dfhdfgjh', 'qwerty')
 
-    print(list(repository.get_contacts('jlo')))  # [('madonna',), ('justin',), ('tommy',), ('rihanna',)]
+    # print(list(repository.get_contacts('jlo')))  # [('madonna',), ('justin',), ('tommy',), ('rihanna',)]
