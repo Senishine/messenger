@@ -9,7 +9,7 @@ from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt
 # from PyQt5.QtGui import QBrush, QColor, QStandardItem
 from PyQt5.uic import loadUi
 from PyQt5 import QtWidgets
-from PyQt5.QtWidgets import QDialog, QApplication, QStackedWidget, QListWidget, QWidget, QTextEdit, QLineEdit
+from PyQt5.QtWidgets import QDialog, QApplication, QStackedWidget, QListWidget, QWidget, QTextEdit, QLineEdit, QDateEdit
 from client.client import Client
 from client.client_repository import ClientRepository
 
@@ -56,7 +56,7 @@ class LoginForm(QDialog):
             try:
                 self.client.login(client_login, password, lambda response: self.login_signal.emit(response))
             except ConnectionError:
-                self.error_field.setText('Unable to contact server')
+                self.error_field.setText('Login and password do not match')
 
     @staticmethod
     def back_to_welcome():
@@ -71,16 +71,26 @@ class LoginForm(QDialog):
             account = AccountForm(self.client)
             widget.addWidget(account)
             widget.setCurrentIndex(widget.currentIndex() + 1)
+        elif code == 400:
+            self.error_field.setText('Login is not signed up')
 
 
 class SignUpForm(QDialog):
+    sign_up_signal = pyqtSignal(dict)
+
     def __init__(self):
         super(SignUpForm, self).__init__()
         loadUi('sign_up_form.ui', self)
+        self.login = self.findChild(QLineEdit, "login_field")
         self.password_field.setEchoMode(QtWidgets.QLineEdit.Password)
         self.confirm_password_field.setEchoMode(QtWidgets.QLineEdit.Password)
+        self.name = self.findChild(QLineEdit, "name_field")
+        self.surname = self.findChild(QLineEdit, "surname_field")
+        self.birthdate = self.findChild(QDateEdit, "birthdate_field")
         self.sign_up_btn.clicked.connect(self.sign_up_for_messenger)
         self.back_btn.clicked.connect(self.back_to_welcome)
+        self.client = Client()
+        self.sign_up_signal.connect(self.show_account_form)
 
     def sign_up_for_messenger(self):
         user_login = self.login_field.text()
@@ -88,14 +98,24 @@ class SignUpForm(QDialog):
         confirm_password = self.confirm_password_field.text()
         name = self.name_field.text()
         surname = self.surname_field.text()
+        birthdate = self.birthdate_field.text()
 
         if len(user_login) == 0 or len(password) == 0 or len(confirm_password) == 0 or len(name) == 0 or len(
                 surname) == 0:
             self.error_field.setText('Please fill in all inputs')
         elif password != confirm_password:
-            self.error_field.setText('Password don\'t match, please try again')
+            self.error_field.setText('Passwords don\'t match, please try again')
         else:
-            account = AccountForm(user_login)
+            try:
+                self.client.sign_up(user_login, password, name, surname, birthdate, lambda response: self.sign_up_signal.emit(response))
+            except ConnectionError:
+                self.error_field.setText('Login and password do not match')
+
+    @pyqtSlot(dict)
+    def show_account_form(self, response):
+        code = response.get(ServerResponseFieldName.RESPONSE.value)
+        if code == ResponseCode.OK.value:
+            account = AccountForm(self.client)
             widget.addWidget(account)
             widget.setCurrentIndex(widget.currentIndex() + 1)
 

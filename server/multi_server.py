@@ -1,6 +1,10 @@
 # *В следующем уроке мы будем изучать дескрипторы и метаклассы.
 # Но вы уже сейчас можете перевести часть кода из функционального стиля в объектно-ориентированный.
 # Создайте классы «Клиент» и «Сервер», а используемые функции превратите в методы классов.
+import binascii
+import hashlib
+import hmac
+import os
 import queue
 import select
 from datetime import datetime
@@ -11,8 +15,8 @@ from sqlalchemy.exc import DatabaseError
 from repository import Repository
 from common.descriptor import Port
 from log.server_log_config import logging
-from common.messages import MessageType, ClientRequestFieldName, PresenceFieldName, MsgFieldName, ResponseCode, \
-    ServerResponseFieldName, RequestToServer
+from common.messages import MessageType, ClientRequestFieldName, UserFieldName, MsgFieldName, ResponseCode, \
+    ServerResponseFieldName, RequestToServer, AuthenticateFieldName
 from common.utils import send_message, get_data
 from common.verifiers import ServerVerifier
 from server.utils import get_config
@@ -39,13 +43,46 @@ class Server(metaclass=ServerVerifier):
         self.db = Repository(db_url)
 
     @staticmethod
+    def __validate_authenticate(msg) -> str:
+        if not msg:
+            return "Empty message"
+        if msg.get(ClientRequestFieldName.ACTION.value) != MessageType.AUTHENTICATE.value:
+            return f"Message type is not {MessageType.AUTHENTICATE.value}"
+        if not msg.get(UserFieldName.USER.value) or \
+                not msg.get(UserFieldName.USER.value).get(UserFieldName.ACCOUNT.value):
+            return "Account name is not filled"
+        if not msg.get(UserFieldName.USER.value).get(AuthenticateFieldName.PASSWORD.value):
+            return "Password is not filled"
+        return ""
+
+    @staticmethod
+    def __validate_sign_up(msg) -> str:
+        if not msg:
+            return "Empty message"
+        if msg.get(ClientRequestFieldName.ACTION.value) != MessageType.SIGN_UP.value:
+            return f"Message type is not {MessageType.SIGN_UP.value}"
+        if not msg.get(UserFieldName.USER.value):
+            return "User information is not filled"
+        if not msg.get(UserFieldName.USER.value).get(UserFieldName.LOGIN.value):
+            return "Login is not filled"
+        if not msg.get(UserFieldName.USER.value).get(AuthenticateFieldName.PASSWORD.value):
+            return "Password is not filled"
+        if not msg.get(UserFieldName.USER.value).get(UserFieldName.NAME.value):
+            return "Name is not filled"
+        if not msg.get(UserFieldName.USER.value).get(UserFieldName.SURNAME.value):
+            return "Surname is not filled"
+        if not msg.get(UserFieldName.USER.value).get(UserFieldName.BIRTHDATE.value):
+            return "Birthdate is not filled"
+        return ""
+
+    @staticmethod
     def __validate_presence(msg) -> str:
         if not msg:
             return "Empty message"
         if msg.get(ClientRequestFieldName.ACTION.value) != MessageType.PRESENCE.value:
             return f"Message type is not {MessageType.PRESENCE.value}"
-        if not msg.get(PresenceFieldName.USER.value) or \
-                not msg.get(PresenceFieldName.USER.value).get(PresenceFieldName.ACCOUNT.value):
+        if not msg.get(UserFieldName.USER.value) or \
+                not msg.get(UserFieldName.USER.value).get(UserFieldName.ACCOUNT.value):
             return "Account name is not filled"
         return ""
 
@@ -168,14 +205,73 @@ class Server(metaclass=ServerVerifier):
             self.__handle_error(s, ResponseCode.BAD_REQUEST.value, err_msg)
             return
         if self.__s_to_account.get(s):
-            self.__handle_error(s, ResponseCode.CONFLICT.value, 'Connection with this login already exists')
+            self.__handle_error(s, ResponseCode.CONFLICT.value, 'Connection with this login is already exists')
             return
         else:
-            account: str = msg[PresenceFieldName.USER.value][PresenceFieldName.ACCOUNT.value]
+            account: str = msg[UserFieldName.USER.value][UserFieldName.ACCOUNT.value]
+            self.__send_response(account, ResponseCode.OK.value)
+
+    def __handle_sign_up_msg(self, s, msg):
+        err_msg = Server.__validate_sign_up(msg)
+        if err_msg:
+            self.__handle_error(s, ResponseCode.BAD_REQUEST.value, err_msg)
+            return
+        elif self.__s_to_account.get(s):
+            self.__handle_error(s, ResponseCode.CONFLICT.value, 'Connection with this login is already exists')
+            return
+        login: str = msg.get(UserFieldName.USER.value).get(UserFieldName.LOGIN.value)
+        password = msg.get(UserFieldName.USER.value).get(AuthenticateFieldName.PASSWORD.value)
+        name = msg.get(UserFieldName.USER.value).get(UserFieldName.NAME.value)
+        surname = msg.get(UserFieldName.USER.value).get(UserFieldName.SURNAME.value)
+        birthdate = msg.get(UserFieldName.USER.value).get(UserFieldName.BIRTHDATE.value)
+        user = None
+        try:
+            user = self.db.get_user(login)
+        except DatabaseError:
+            pass
+        if user is not None:
+            self.__send_response(login, ResponseCode.BAD_REQUEST.value, 'Account with this login is already signed up')
+            return
+        logger.info('Login is checked [login=%s], sign up beginning', login)
+        salt = os.urandom(16)
+        hash_str = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt, 100000)
+        self.db.sign_up(login, name, surname, hash_str, salt, birthdate)
+        self.db.add_history(Repository.UserHistory(login, datetime.now(), self.__s_to_addr[s][0]))
+        self.__s_to_account[s] = login
+        self.__account_to_s[login] = s
+        self.__send_response(login, ResponseCode.OK.value)
+        logger.info('Login is signed up [login=%s]', login)
+
+    def __handle_authenticate_msg(self, s, msg):
+        err_msg = Server.__validate_authenticate(msg)
+        if err_msg:
+            self.__handle_error(s, ResponseCode.BAD_REQUEST.value, err_msg)
+            return
+        elif self.__s_to_account.get(s):
+            self.__handle_error(s, ResponseCode.CONFLICT.value, 'Connection with this login is already exists')
+            return
+        account: str = msg.get(UserFieldName.USER.value).get(UserFieldName.ACCOUNT.value)
+        client_pass = msg.get(UserFieldName.USER.value).get(AuthenticateFieldName.PASSWORD.value)
+        user = None
+        try:
+            user = self.db.get_user(account)
+        except DatabaseError:
+            pass
+        if user is None:
+            self.__send_response(account, ResponseCode.UNAUTHORIZED.value, 'User does not exist')
+            return
+
+        logger.info('Login is checked [login=%s], checking pass', account)
+        salt = user.salt
+        hash_str = hashlib.pbkdf2_hmac('sha256', client_pass.encode('utf-8'), salt, 100000)
+        if hmac.compare_digest(hash_str, self.db.get_hash(account)):
             self.db.add_history(Repository.UserHistory(account, datetime.now(), self.__s_to_addr[s][0]))
             self.__s_to_account[s] = account
             self.__account_to_s[account] = s
             self.__send_response(account, ResponseCode.OK.value)
+        else:
+            logger.debug('The user [login=%s] inputted incorrect password', account)
+            self.__send_response(account, ResponseCode.BAD_REQUEST.value, 'Password is incorrect')
 
     def __handle_user_msg(self, s, msg, account):
         err_msg = Server.__validate_msg(msg, account)
@@ -233,9 +329,19 @@ class Server(metaclass=ServerVerifier):
             except ValueError:
                 self.__handle_error(s, ResponseCode.BAD_REQUEST.value, 'Invalid JSON')
                 return
+
             msg_type = msg.get(ClientRequestFieldName.ACTION.value)
+
+            if msg_type == MessageType.AUTHENTICATE.value:
+                self.__handle_authenticate_msg(s, msg)
+                return
+
             if msg_type == MessageType.PRESENCE.value:
                 self.__handle_presence_msg(s, msg)
+                return
+
+            if msg_type == MessageType.SIGN_UP.value:
+                self.__handle_sign_up_msg(s, msg)
                 return
 
             owner_account = self.__s_to_account.get(s)
