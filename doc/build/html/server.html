@@ -1,0 +1,385 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>server package &#8212; Messenger 0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="pyqt_ui package" href="pyqt_ui.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="server-package">
+<h1>server package<a class="headerlink" href="#server-package" title="Permalink to this headline">¶</a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="server-multi-server-module">
+<h2>server.multi_server module<a class="headerlink" href="#server-multi-server-module" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="module-server.repository">
+<span id="server-repository-module"></span><h2>server.repository module<a class="headerlink" href="#module-server.repository" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="server.repository.Repository">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">server.repository.</span></span><span class="sig-name descname"><span class="pre">Repository</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">url</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#server.repository.Repository" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py class">
+<dt class="sig sig-object py" id="server.repository.Repository.Base">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Base</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#server.repository.Repository.Base" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>The base class of the class hierarchy.</p>
+<p>When called, it accepts no arguments and returns a new featureless
+instance that has no instance attributes and cannot be given any.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.repository.Repository.Base.metadata">
+<span class="sig-name descname"><span class="pre">metadata</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">MetaData()</span></em><a class="headerlink" href="#server.repository.Repository.Base.metadata" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.repository.Repository.Base.registry">
+<span class="sig-name descname"><span class="pre">registry</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;sqlalchemy.orm.decl_api.registry</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#server.repository.Repository.Base.registry" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="server.repository.Repository.Contact">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Contact</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">owner_login</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">client_login</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#server.repository.Repository.Contact" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#server.repository.Repository.Base" title="sqlalchemy.orm.decl_api.Base"><code class="xref py py-class docutils literal notranslate"><span class="pre">sqlalchemy.orm.decl_api.Base</span></code></a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.repository.Repository.Contact.contact_id">
+<span class="sig-name descname"><span class="pre">contact_id</span></span><a class="headerlink" href="#server.repository.Repository.Contact.contact_id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.repository.Repository.Contact.contact_login">
+<span class="sig-name descname"><span class="pre">contact_login</span></span><a class="headerlink" href="#server.repository.Repository.Contact.contact_login" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.repository.Repository.Contact.owner_login">
+<span class="sig-name descname"><span class="pre">owner_login</span></span><a class="headerlink" href="#server.repository.Repository.Contact.owner_login" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="server.repository.Repository.User">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">User</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">login</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">surname</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">password</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">salt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">birthdate</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#server.repository.Repository.User" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#server.repository.Repository.Base" title="sqlalchemy.orm.decl_api.Base"><code class="xref py py-class docutils literal notranslate"><span class="pre">sqlalchemy.orm.decl_api.Base</span></code></a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.repository.Repository.User.birthdate">
+<span class="sig-name descname"><span class="pre">birthdate</span></span><a class="headerlink" href="#server.repository.Repository.User.birthdate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.repository.Repository.User.login">
+<span class="sig-name descname"><span class="pre">login</span></span><a class="headerlink" href="#server.repository.Repository.User.login" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.repository.Repository.User.name">
+<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#server.repository.Repository.User.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.repository.Repository.User.password_hash">
+<span class="sig-name descname"><span class="pre">password_hash</span></span><a class="headerlink" href="#server.repository.Repository.User.password_hash" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.repository.Repository.User.salt">
+<span class="sig-name descname"><span class="pre">salt</span></span><a class="headerlink" href="#server.repository.Repository.User.salt" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.repository.Repository.User.surname">
+<span class="sig-name descname"><span class="pre">surname</span></span><a class="headerlink" href="#server.repository.Repository.User.surname" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="server.repository.Repository.UserHistory">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">UserHistory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">login</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">login_time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ip_address</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#server.repository.Repository.UserHistory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#server.repository.Repository.Base" title="sqlalchemy.orm.decl_api.Base"><code class="xref py py-class docutils literal notranslate"><span class="pre">sqlalchemy.orm.decl_api.Base</span></code></a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.repository.Repository.UserHistory.client_id">
+<span class="sig-name descname"><span class="pre">client_id</span></span><a class="headerlink" href="#server.repository.Repository.UserHistory.client_id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.repository.Repository.UserHistory.ip_address">
+<span class="sig-name descname"><span class="pre">ip_address</span></span><a class="headerlink" href="#server.repository.Repository.UserHistory.ip_address" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.repository.Repository.UserHistory.login">
+<span class="sig-name descname"><span class="pre">login</span></span><a class="headerlink" href="#server.repository.Repository.UserHistory.login" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.repository.Repository.UserHistory.login_time">
+<span class="sig-name descname"><span class="pre">login_time</span></span><a class="headerlink" href="#server.repository.Repository.UserHistory.login_time" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="server.repository.Repository.add_contact">
+<span class="sig-name descname"><span class="pre">add_contact</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">owner</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">contact_login</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#server.repository.Repository.add_contact" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="server.repository.Repository.add_history">
+<span class="sig-name descname"><span class="pre">add_history</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">history</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#server.repository.Repository.UserHistory" title="server.repository.Repository.UserHistory"><span class="pre">server.repository.Repository.UserHistory</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#server.repository.Repository.add_history" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="server.repository.Repository.add_user">
+<span class="sig-name descname"><span class="pre">add_user</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">user</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#server.repository.Repository.User" title="server.repository.Repository.User"><span class="pre">server.repository.Repository.User</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#server.repository.Repository.add_user" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="server.repository.Repository.connect_to_messenger">
+<span class="sig-name descname"><span class="pre">connect_to_messenger</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client_login</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ip_address</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#server.repository.Repository.connect_to_messenger" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="server.repository.Repository.del_contact">
+<span class="sig-name descname"><span class="pre">del_contact</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">owner</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">contact</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#server.repository.Repository.del_contact" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="server.repository.Repository.del_user">
+<span class="sig-name descname"><span class="pre">del_user</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">login</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#server.repository.Repository.del_user" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="server.repository.Repository.get_all_user_history">
+<span class="sig-name descname"><span class="pre">get_all_user_history</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#server.repository.Repository.get_all_user_history" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="server.repository.Repository.get_contacts">
+<span class="sig-name descname"><span class="pre">get_contacts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">owner</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#server.repository.Repository.get_contacts" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="server.repository.Repository.get_hash">
+<span class="sig-name descname"><span class="pre">get_hash</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">login</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#server.repository.Repository.get_hash" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="server.repository.Repository.get_user">
+<span class="sig-name descname"><span class="pre">get_user</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">login</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#server.repository.Repository.User" title="server.repository.Repository.User"><span class="pre">server.repository.Repository.User</span></a></span></span><a class="headerlink" href="#server.repository.Repository.get_user" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="server.repository.Repository.get_user_history">
+<span class="sig-name descname"><span class="pre">get_user_history</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">login</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#server.repository.Repository.get_user_history" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="server.repository.Repository.load_users">
+<span class="sig-name descname"><span class="pre">load_users</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#server.repository.Repository.load_users" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="server.repository.Repository.sign_up">
+<span class="sig-name descname"><span class="pre">sign_up</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">login</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">surname</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pass_hash</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">salt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">birthdate</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#server.repository.Repository.sign_up" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="server.repository.set_sqlite_pragma">
+<span class="sig-prename descclassname"><span class="pre">server.repository.</span></span><span class="sig-name descname"><span class="pre">set_sqlite_pragma</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dbapi_connection</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">connection_record</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#server.repository.set_sqlite_pragma" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-server.server_utils">
+<span id="server-server-utils-module"></span><h2>server.server_utils module<a class="headerlink" href="#module-server.server_utils" title="Permalink to this headline">¶</a></h2>
+<p>Модуль валидации сообщений от клиента</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="server.server_utils.create_response">
+<span class="sig-prename descclassname"><span class="pre">server.server_utils.</span></span><span class="sig-name descname"><span class="pre">create_response</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">code</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">200</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">msg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#server.server_utils.create_response" title="Permalink to this definition">¶</a></dt>
+<dd><p>Функция создания ответа от сервера</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="server.server_utils.remove_from_list">
+<span class="sig-prename descclassname"><span class="pre">server.server_utils.</span></span><span class="sig-name descname"><span class="pre">remove_from_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lst</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#server.server_utils.remove_from_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Функция удаления значения из списка</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="server.server_utils.remove_if_present">
+<span class="sig-prename descclassname"><span class="pre">server.server_utils.</span></span><span class="sig-name descname"><span class="pre">remove_if_present</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#server.server_utils.remove_if_present" title="Permalink to this definition">¶</a></dt>
+<dd><p>Функция удаления значения из словаря</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="server.server_utils.validate_add_contact">
+<span class="sig-prename descclassname"><span class="pre">server.server_utils.</span></span><span class="sig-name descname"><span class="pre">validate_add_contact</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">account</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#server.server_utils.validate_add_contact" title="Permalink to this definition">¶</a></dt>
+<dd><p>Функция анализа сообщения добавления контакта</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="server.server_utils.validate_authenticate">
+<span class="sig-prename descclassname"><span class="pre">server.server_utils.</span></span><span class="sig-name descname"><span class="pre">validate_authenticate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#server.server_utils.validate_authenticate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Функция анализа сообщения аутентификации</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="server.server_utils.validate_del_contact">
+<span class="sig-prename descclassname"><span class="pre">server.server_utils.</span></span><span class="sig-name descname"><span class="pre">validate_del_contact</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">account</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#server.server_utils.validate_del_contact" title="Permalink to this definition">¶</a></dt>
+<dd><p>Функция анализа сообщения удаления контакта</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="server.server_utils.validate_get_contact">
+<span class="sig-prename descclassname"><span class="pre">server.server_utils.</span></span><span class="sig-name descname"><span class="pre">validate_get_contact</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">account</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#server.server_utils.validate_get_contact" title="Permalink to this definition">¶</a></dt>
+<dd><p>Функция анализа сообщения получения списка контактов</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="server.server_utils.validate_presence">
+<span class="sig-prename descclassname"><span class="pre">server.server_utils.</span></span><span class="sig-name descname"><span class="pre">validate_presence</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#server.server_utils.validate_presence" title="Permalink to this definition">¶</a></dt>
+<dd><p>Функция анализа presence - сообщения</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="server.server_utils.validate_sign_up">
+<span class="sig-prename descclassname"><span class="pre">server.server_utils.</span></span><span class="sig-name descname"><span class="pre">validate_sign_up</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#server.server_utils.validate_sign_up" title="Permalink to this definition">¶</a></dt>
+<dd><p>Функция анализа сообщения регистрации</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="server.server_utils.validate_user_msg">
+<span class="sig-prename descclassname"><span class="pre">server.server_utils.</span></span><span class="sig-name descname"><span class="pre">validate_user_msg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">account</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#server.server_utils.validate_user_msg" title="Permalink to this definition">¶</a></dt>
+<dd><p>Функция анализа сообщения для контакта</p>
+</dd></dl>
+
+</section>
+<section id="module-server.utils">
+<span id="server-utils-module"></span><h2>server.utils module<a class="headerlink" href="#module-server.utils" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="server.utils.get_config">
+<span class="sig-prename descclassname"><span class="pre">server.utils.</span></span><span class="sig-name descname"><span class="pre">get_config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#server.utils.get_config" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="server.utils.get_config_path">
+<span class="sig-prename descclassname"><span class="pre">server.utils.</span></span><span class="sig-name descname"><span class="pre">get_config_path</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#server.utils.get_config_path" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-server">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-server" title="Permalink to this headline">¶</a></h2>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">Messenger</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="client.html">client package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="common.html">common package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pyqt_ui.html">pyqt_ui package</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">server package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#server-multi-server-module">server.multi_server module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-server.repository">server.repository module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-server.server_utils">server.server_utils module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-server.utils">server.utils module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-server">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="pyqt_ui.html" title="previous chapter">pyqt_ui package</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2022, oxana.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.4.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/server.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

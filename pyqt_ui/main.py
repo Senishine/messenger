@@ -1,15 +1,14 @@
+""" Модуль, отображающий основной UI приложения"""
+
 import sys
 from datetime import datetime
-
 from PyQt5.QtGui import QStandardItem, QBrush, QColor, QStandardItemModel
-
 from common.messages import ServerResponseFieldName, ResponseCode, ClientRequestFieldName, MessageType, MsgFieldName
 from log.client_log_config import logging
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt
-# from PyQt5.QtGui import QBrush, QColor, QStandardItem
 from PyQt5.uic import loadUi
 from PyQt5 import QtWidgets
-from PyQt5.QtWidgets import QDialog, QApplication, QStackedWidget, QListWidget, QWidget, QTextEdit, QLineEdit, QDateEdit
+from PyQt5.QtWidgets import QDialog, QApplication, QStackedWidget, QListWidget, QLineEdit, QDateEdit
 from client.client import Client
 from client.client_repository import ClientRepository
 
@@ -17,6 +16,9 @@ logger = logging.getLogger('gb.client')
 
 
 class WelcomeForm(QDialog):
+    """
+    Класс стартового окна приложения с формой логина и регистрации
+    """
     def __init__(self):
         super(WelcomeForm, self).__init__()
         loadUi('welcome_form.ui', self)
@@ -24,17 +26,26 @@ class WelcomeForm(QDialog):
         self.sign_up_btn.clicked.connect(self.sign_up_for_messenger)
 
     def go_to_login(self):
+        """
+        Метод-обработчик нажатия кнопки login. Отображает форму логина Проверяет заполненность полей формы.
+        """
         login_obj = LoginForm()
         widget.addWidget(login_obj)
         widget.setCurrentIndex(widget.currentIndex() + 1)
 
     def sign_up_for_messenger(self):
+        """
+        Метод-обработчик нажатия кнопки sign_up. Отображает форму регистрации
+        """
         registration = SignUpForm()
         widget.addWidget(registration)
         widget.setCurrentIndex(widget.currentIndex() + 1)
 
 
 class LoginForm(QDialog):
+    """
+    Класс с формой логина
+    """
     login_signal = pyqtSignal(dict)
 
     def __init__(self):
@@ -47,6 +58,9 @@ class LoginForm(QDialog):
         self.login_signal.connect(self.show_account_form)
 
     def connect_to_chat(self):
+        """
+        Метод-обработчик нажатия кнопки login. Проверяет заполненность полей формы
+        """
         client_login = self.login_field.text()
         password = self.password_field.text()
 
@@ -60,12 +74,18 @@ class LoginForm(QDialog):
 
     @staticmethod
     def back_to_welcome():
+        """
+        Метод-обработчик нажатия кнопки back. Возвращает стартовое окно welcome
+        """
         welcome_form = WelcomeForm()
         widget.addWidget(welcome_form)
         widget.setCurrentIndex(widget.currentIndex() + 1)
 
     @pyqtSlot(dict)
     def show_account_form(self, response):
+        """
+        Метод-слот, отображает основную форму приложения пользователя с чатом и списком контактов
+        """
         code = response.get(ServerResponseFieldName.RESPONSE.value)
         if code == ResponseCode.OK.value:
             account = AccountForm(self.client)
@@ -76,6 +96,9 @@ class LoginForm(QDialog):
 
 
 class SignUpForm(QDialog):
+    """
+    Класс с формой регистрации
+    """
     sign_up_signal = pyqtSignal(dict)
 
     def __init__(self):
@@ -93,6 +116,9 @@ class SignUpForm(QDialog):
         self.sign_up_signal.connect(self.show_account_form)
 
     def sign_up_for_messenger(self):
+        """
+        Метод-обработчик нажатия кнопки sign_up. Проверяет заполненность полей формы
+        """
         user_login = self.login_field.text()
         password = self.password_field.text()
         confirm_password = self.confirm_password_field.text()
@@ -107,12 +133,16 @@ class SignUpForm(QDialog):
             self.error_field.setText('Passwords don\'t match, please try again')
         else:
             try:
-                self.client.sign_up(user_login, password, name, surname, birthdate, lambda response: self.sign_up_signal.emit(response))
+                self.client.sign_up(user_login, password, name, surname, birthdate,
+                                    lambda response: self.sign_up_signal.emit(response))
             except ConnectionError:
                 self.error_field.setText('Login and password do not match')
 
     @pyqtSlot(dict)
     def show_account_form(self, response):
+        """
+        Метод-слот, отображает основную форму приложения пользователя с чатом и списком контактов
+        """
         code = response.get(ServerResponseFieldName.RESPONSE.value)
         if code == ResponseCode.OK.value:
             account = AccountForm(self.client)
@@ -120,12 +150,18 @@ class SignUpForm(QDialog):
             widget.setCurrentIndex(widget.currentIndex() + 1)
 
     def back_to_welcome(self):
+        """
+        Метод-обработчик нажатия кнопки back. Возвращает стартовое окно welcome
+        """
         welcome_form = WelcomeForm()
         widget.addWidget(welcome_form)
         widget.setCurrentIndex(widget.currentIndex() + 1)
 
 
 class AccountForm(QDialog):
+    """
+    Класс с основной формой приложения пользователя с чатом и списком контактов
+    """
     cont_list_signal = pyqtSignal(dict)
     add_contact_signal = pyqtSignal(str, dict)
     del_contact_signal = pyqtSignal(str, dict)
@@ -147,20 +183,20 @@ class AccountForm(QDialog):
         self.chat_list = self.findChild(QtWidgets.QListView, "chat_list")
         self.chat_model = QStandardItemModel()
         self.chat_list.setModel(self.chat_model)
-
         self.add_contact_signal.connect(self.show_new_contact)
         self.add_contact_btn.clicked.connect(self.add_contact_to_list)
         self.del_contact_signal.connect(self.remove_contact)
         self.delete_contact_btn.clicked.connect(self.del_contact_from_list)
-
         self.send_btn.clicked.connect(self.send_btn_clicked)
         self.message_sent_signal.connect(self.message_sent)
-
         self.client.subscribe_to_messages(lambda msg: self.receive_message_signal.emit(msg))
         self.receive_message_signal.connect(self.message_received)
 
     @pyqtSlot(dict)
     def handle_contacts_response(self, response):
+        """
+        Метод отображения списка контактов
+        """
         code = response.get(ServerResponseFieldName.RESPONSE.value)
         if code == ResponseCode.ACCEPTED.value:
             contacts = response['alert'].lstrip('"[').rstrip(']"').split(',')
@@ -170,6 +206,9 @@ class AccountForm(QDialog):
             self.database.session.commit()
 
     def send_btn_clicked(self):
+        """
+        Метод-обработчик нажатия кнопки send. Отправляет сообщение контакту
+        """
         contact = self.input_contact_login.text()
         message = self.input_message.toPlainText()
         if not contact or not message:
@@ -180,6 +219,9 @@ class AccountForm(QDialog):
 
     @pyqtSlot(str, str, dict)
     def message_sent(self, contact, message, response):
+        """
+        Метод сохранения отправленного сообщения в базе данных
+        """
         code = response.get(ServerResponseFieldName.RESPONSE.value)
         if code != ResponseCode.OK.value:
             return
@@ -192,6 +234,9 @@ class AccountForm(QDialog):
         self.__add_sent_msg_to_model(now, message)
 
     def set_current_chat(self):
+        """
+        Метод установки текущего чата по выделенному элементу в списке контактов
+        """
         self.chat_model.removeRows(0, self.chat_model.rowCount())
         contact_login = self.contacts_list.currentItem().text()
         self.selected_contact = contact_login
@@ -206,6 +251,9 @@ class AccountForm(QDialog):
                 self.__add_received_msg_to_model(message_history.date, message_history.message)
 
     def __add_sent_msg_to_model(self, date_time, message):
+        """
+        Метод отображения отправленного сообщения в текущем чате
+        """
         mess = QStandardItem(f'Sent at {date_time.replace(microsecond=0)}:\n {message}')
         mess.setEditable(False)
         mess.setTextAlignment(Qt.AlignRight)
@@ -213,6 +261,9 @@ class AccountForm(QDialog):
         self.chat_model.appendRow(mess)
 
     def __add_received_msg_to_model(self, date_time, message):
+        """
+        Метод отображения полученного сообщения в текущем чате
+        """
         mess = QStandardItem(f'Received at {date_time.replace(microsecond=0)}:\n {message}')
         mess.setEditable(False)
         mess.setBackground(QBrush(QColor(230, 230, 255)))
@@ -220,6 +271,9 @@ class AccountForm(QDialog):
         self.chat_model.appendRow(mess)
 
     def add_contact_to_list(self):
+        """
+        Метод проверки нового контакта в базе данных при добавлении в список контактов
+        """
         contact = self.input_contact_login.text()
         if contact:
             if not self.database.check_contact(contact):
@@ -229,6 +283,9 @@ class AccountForm(QDialog):
 
     @pyqtSlot(str, dict)
     def show_new_contact(self, contact, response):
+        """
+        Метод добавления контакта в список контактов
+        """
         if response.get(ServerResponseFieldName.RESPONSE.value) == ResponseCode.OK.value:
             self.contacts_list.addItem(contact)
             self.database.add_contact(contact)
@@ -238,6 +295,9 @@ class AccountForm(QDialog):
 
     @pyqtSlot(dict)
     def message_received(self, msg):
+        """
+        Метод сохранения полученного сообщения в базу данных
+        """
         if not msg or not msg.get(ClientRequestFieldName.ACTION) != MessageType.MESSAGE:
             return
 
@@ -268,6 +328,9 @@ class AccountForm(QDialog):
 
     @pyqtSlot(str, dict)
     def remove_contact(self, contact, response):
+        """
+        Метод-обработчик для удаления контакта
+        """
         if response.get(ServerResponseFieldName.RESPONSE.value) == ResponseCode.OK.value:
             index = -1
             for i in range(self.contacts_list.count()):
