@@ -113,9 +113,9 @@ class Repository:
         self.__exec(lambda: self.session.add(contact))
 
     def del_contact(self, owner: str, contact: str):
-        self.__exec(lambda: self.session.query(self.Contact) \
-            .filter_by(owner_login=owner, contact_login=contact) \
-            .delete())
+        self.__exec(lambda: self.session.query(self.Contact)
+                    .filter_by(owner_login=owner, contact_login=contact)
+                    .delete())
 
     def get_contacts(self, owner: str):
         return self.session.query(self.Contact.contact_login).filter_by(owner_login=owner)
@@ -125,7 +125,8 @@ class Repository:
         return user.password_hash
 
     def sign_up(self, login, name, surname, pass_hash, salt, birthdate):
-        user_row = self.User(login=login, name=name,surname=surname, password=pass_hash, salt=salt,birthdate=birthdate)
+        user_row = self.User(login=login, name=name, surname=surname, password=pass_hash, salt=salt,
+                             birthdate=birthdate)
         self.__exec(lambda: self.session.add(user_row))
 
 

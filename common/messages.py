@@ -1,8 +1,11 @@
+"""Константы, являющиеся основными ключами протокола обмена сообщениями JIM"""
+
 from enum import Enum
 
 
 class ClientRequestFieldName(Enum):
     ACTION = 'action'
+
 
 class AuthenticateFieldName(Enum):
     PASSWORD = "password"
