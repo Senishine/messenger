@@ -3,3 +3,5 @@ SQLAlchemy~=1.4.31
 PyQt5~=5.15.4
 pycryptodomex
 sphinx
+wheel
+twine
