@@ -102,6 +102,20 @@ class Client:
         self.__task_sender = None
 
     @staticmethod
+    def __create_sign_up_msg(login, password, name, surname, birthdate):
+        return {
+            'action': MessageType.SIGN_UP.value,
+            'time': time.time(),
+            'user': {
+                'login': login,
+                'password': password,
+                'name': name,
+                'surname': surname,
+                'birthdate': birthdate
+            }
+        }
+
+    @staticmethod
     def __create_message(account_name, recipient_name, message):
         message_dict = {
             "action": "msg",
@@ -111,6 +125,17 @@ class Client:
             "message": message
         }
         return message_dict
+
+    @staticmethod
+    def __create_authenticate_msg(account_name, password):
+        return {
+            'action': MessageType.AUTHENTICATE.value,
+            'time': time.time(),
+            'user': {
+                'account_name': account_name,
+                'password': password
+            }
+        }
 
     @staticmethod
     def __create_presence_msg(account_name, status=''):
@@ -185,7 +210,23 @@ class Client:
         self.__task_sender.start()
         self.__receiver.start()
 
-        self.__task_sender.submit_task(self.__create_presence_msg(login),
+        self.__task_sender.submit_task(self.__create_authenticate_msg(login, password),
+                                       lambda response: self.__login_callback(login, response, result))
+
+    def sign_up(self, login, password, name, surname, birthdate, result):
+        if self.__connected:
+            raise ValueError('Client already connected')
+        self.__connected = True
+        self.__sock = create_socket()
+        self.__sock.connect((self.__address, self.__port))
+
+        response_queue = Queue()
+        self.__receiver = ReceiverThread(self.__sock, response_queue)
+        self.__task_sender = SenderThread(self.__sock, response_queue)
+        self.__task_sender.start()
+        self.__receiver.start()
+
+        self.__task_sender.submit_task(self.__create_sign_up_msg(login, password, name, surname, birthdate),
                                        lambda response: self.__login_callback(login, response, result))
 
     @property
