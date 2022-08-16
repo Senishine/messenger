@@ -1,14 +1,15 @@
-"""
-Продолжая задачу логирования, реализовать декоратор @log, фиксирующий обращение к декорируемой функции. Он сохраняет ее
-имя и аргументы.
-В декораторе @log реализовать фиксацию функции, из которой была вызвана декорированная.
-"""
+""" Модуль декораторов для логирования работы функций """
+
 from functools import wraps
 import logging
 import inspect
 
 
 def log(logger=logging):
+    """
+    Функция-декоратор для логирования работы функций
+    """
+
     def log_wrap(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -17,11 +18,17 @@ def log(logger=logging):
                         'result is %s',
                         func.__name__, inspect.stack()[1].function, args, kwargs, result)
             return result
+
         return wrapper
+
     return log_wrap
 
 
-class Log():
+class Log:
+    """
+    Класс для логирования работы функций
+    """
+
     def __init__(self, logger=logging):
         self.logger = logger
 

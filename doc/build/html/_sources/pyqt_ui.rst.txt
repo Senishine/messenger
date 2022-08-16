@@ -1,0 +1,29 @@
+pyqt\_ui package
+================
+
+Submodules
+----------
+
+pyqt\_ui.admin\_page module
+---------------------------
+
+.. automodule:: pyqt_ui.admin_page
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pyqt\_ui.main module
+--------------------
+
+.. automodule:: pyqt_ui.main
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Module contents
+---------------
+
+.. automodule:: pyqt_ui
+   :members:
+   :undoc-members:
+   :show-inheritance:

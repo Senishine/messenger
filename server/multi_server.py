@@ -1,6 +1,5 @@
-# *В следующем уроке мы будем изучать дескрипторы и метаклассы.
-# Но вы уже сейчас можете перевести часть кода из функционального стиля в объектно-ориентированный.
-# Создайте классы «Клиент» и «Сервер», а используемые функции превратите в методы классов.
+""" Модуль класса сервера """
+
 import hashlib
 import hmac
 import os
@@ -8,9 +7,7 @@ import queue
 import select
 from datetime import datetime
 from socket import socket, AF_INET, SOCK_STREAM
-
 from sqlalchemy.exc import DatabaseError
-
 from repository import Repository
 from common.descriptor import Port
 from log.server_log_config import logging
@@ -26,6 +23,10 @@ logger = logging.getLogger('gb.server')
 
 
 class Request:
+    """
+    Класс, описывающий декоратор login_required, проверяющий авторизованность пользователя
+    для выполнения той или иной функции.
+    """
     def __init__(self, sock: socket, msg: dict):
         self.sock: socket = sock
         self.msg: dict = msg
@@ -45,6 +46,9 @@ def login_required(method):
 
 
 class Server(metaclass=ServerVerifier):
+    """
+    Класс сервера
+    """
     __port = Port(logger)
 
     def __init__(self, db_url, address='', port=7777):
@@ -60,8 +64,8 @@ class Server(metaclass=ServerVerifier):
         self.__address = address
         self.__port = port
         self.__started = False
-        self.__input_sockets = []  # sockets which should be checked for available data to read (на готовность к вводу)
-        self.__output_sockets = []  # sockets which should be checked for readiness to write data (проверяются на готовность к выводу)
+        self.__input_sockets = []
+        self.__output_sockets = []
         # when online only
         self._s_to_account = {}
         self.__account_to_s = {}
@@ -73,20 +77,32 @@ class Server(metaclass=ServerVerifier):
         self.db = Repository(db_url)
 
     def __send_response_to_socket(self, sock, code, msg=None):
+        """
+        Метод добавления ответа в очередь переданноме сокету
+        """
         self.__socket_to_messages.setdefault(sock, queue.Queue()) \
             .put(create_response(code, msg))
 
     def __send_response(self, account, code, msg=None):
+        """
+        Метод добавления ответа в очередь переданноме пользователю
+        """
         self.__account_to_messages.setdefault(account, queue.Queue()) \
             .put(create_response(code, msg))
 
     def __handle_error(self, s, err_code, err_msg):
+        """
+        Метод обработки ошибок
+        """
         if self.__s_to_error_msgs.get(s):
             return
         self.__s_to_error_msgs[s] = create_response(err_code, err_msg)
         remove_from_list(s, self.__input_sockets)
 
     def __handle_writable_socket(self, s: socket):
+        """
+        Метод получения сообщений от сокетов клиентов
+        """
         try:
             socket_error = self.__s_to_error_msgs.get(s)
             if socket_error is not None:
@@ -115,6 +131,9 @@ class Server(metaclass=ServerVerifier):
             self.__cleanup_socket(s)
 
     def __handle_presence_msg(self, request):
+        """
+        Метод обработки presence-сообщения от пользователя
+        """
         err_msg = validate_presence(request.msg)
         if err_msg:
             self.__handle_error(request.sock, ResponseCode.BAD_REQUEST.value, err_msg)
@@ -128,6 +147,9 @@ class Server(metaclass=ServerVerifier):
             self.__send_response(account, ResponseCode.OK.value)
 
     def __handle_sign_up_msg(self, request):
+        """
+        Метод обработки регистрации пользователя
+        """
         err_msg = validate_sign_up(request.msg)
         if err_msg:
             self.__handle_error(request.sock, ResponseCode.BAD_REQUEST.value, err_msg)
@@ -160,6 +182,9 @@ class Server(metaclass=ServerVerifier):
         logger.info('Login is signed up [login=%s]', login)
 
     def __handle_authenticate_msg(self, request):
+        """
+        Метод обработки сообщения аутентификации
+        """
         err_msg = validate_authenticate(request.msg)
         if err_msg:
             self.__handle_error(request.sock, ResponseCode.BAD_REQUEST.value, err_msg)
@@ -193,6 +218,9 @@ class Server(metaclass=ServerVerifier):
 
     @login_required
     def __handle_user_msg(self, request):
+        """
+        Метод обработки сообщения для контакта
+        """
         err_msg = validate_user_msg(request.msg, request.account)
         if err_msg:
             self.__handle_error(request.sock, ResponseCode.BAD_REQUEST.value, err_msg)
@@ -203,6 +231,9 @@ class Server(metaclass=ServerVerifier):
 
     @login_required
     def __handle_add_contact_msg(self, request):
+        """
+        Метод обработки сообщения добавления контакта
+        """
         err_msg = validate_add_contact(request.msg, request.account)
         if err_msg:
             self.__handle_error(request.sock, ResponseCode.BAD_REQUEST.value, err_msg)
@@ -217,6 +248,9 @@ class Server(metaclass=ServerVerifier):
 
     @login_required
     def __handle_del_contact_msg(self, request):
+        """
+        Метод обработки сообщения удаления контакта
+        """
         err_msg = validate_del_contact(request.msg, request.account)
         if err_msg:
             self.__handle_error(request.sock, ResponseCode.BAD_REQUEST.value, err_msg)
@@ -231,6 +265,9 @@ class Server(metaclass=ServerVerifier):
 
     @login_required
     def __handle_get_contact_msg(self, request):
+        """
+        Метод обработки сообщения получения списка контактов
+        """
         err_msg = validate_get_contact(request.msg, request.account)
         if err_msg:
             self.__handle_error(request.sock, ResponseCode.BAD_REQUEST.value, err_msg)
@@ -241,6 +278,9 @@ class Server(metaclass=ServerVerifier):
         self.__send_response(owner, ResponseCode.ACCEPTED.value, f"[{','.join(converted)}]")
 
     def __handle_message_from_client(self, s: socket):
+        """
+        Метод обработки сообщений от пользователя
+        """
         try:
             err_message = self.__s_to_error_msgs.get(s)
             if err_message is not None:
@@ -269,6 +309,9 @@ class Server(metaclass=ServerVerifier):
             self.__handle_error(s, ResponseCode.INTERNAL_SERVER_ERROR.value, 'Server error')
 
     def __cleanup_socket(self, sck):
+        """
+        Метод закрывания работы с сокетом
+        """
         account = self._s_to_account.get(sck)
         if account is not None:
             remove_if_present(account, self.__account_to_s)
@@ -286,6 +329,9 @@ class Server(metaclass=ServerVerifier):
         sck.close()
 
     def start(self):
+        """
+        Основной метод сервера
+        """
         if self.__started:
             raise ValueError('Server already started')
         self.__started = True

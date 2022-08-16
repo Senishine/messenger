@@ -1,7 +1,17 @@
+"""
+Модуль метаклассов
+"""
+
 import dis
 
 
 class ClientVerifier(type):
+    """
+    Метакласс контролирует наличие настройки для подключения по TCP
+    и отсутствие использования метода connect в сокете сервера
+    на этапе инициализации класса
+    """
+
     def __init__(cls, clsname, bases, clsdict):
         methods = []
         for func in clsdict:
@@ -23,6 +33,12 @@ class ClientVerifier(type):
 
 
 class ServerVerifier(type):
+    """
+    Метакласс контролирует на этапе инициализации класса наличие настройки для подключения по TCP
+    и отсутствие использования методов listen и accept в сокете клиента,
+    а также отсутствие в атрибутах класса объектов сокета
+    """
+
     def __init__(cls, clsname, bases, clsdict):
         found_socket = False
         for func in clsdict:

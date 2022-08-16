@@ -1,12 +1,16 @@
+""" Модуль валидации сообщений от клиента """
+
 from common.messages import MessageType, ClientRequestFieldName, UserFieldName, MsgFieldName, ResponseCode, \
     ServerResponseFieldName, RequestToServer, AuthenticateFieldName
 from log.server_log_config import logging
-from server.repository import Repository
 
 logger = logging.getLogger('gb.server')
 
 
 def validate_authenticate(msg) -> str:
+    """
+    Функция анализа сообщения аутентификации
+    """
     if not msg:
         return "Empty message"
     if msg.get(ClientRequestFieldName.ACTION.value) != MessageType.AUTHENTICATE.value:
@@ -20,6 +24,9 @@ def validate_authenticate(msg) -> str:
 
 
 def validate_sign_up(msg) -> str:
+    """
+    Функция анализа сообщения регистрации
+    """
     if not msg:
         return "Empty message"
     if msg.get(ClientRequestFieldName.ACTION.value) != MessageType.SIGN_UP.value:
@@ -40,6 +47,9 @@ def validate_sign_up(msg) -> str:
 
 
 def validate_presence(msg) -> str:
+    """
+    Функция анализа presence - сообщения
+    """
     if not msg:
         return "Empty message"
     if msg.get(ClientRequestFieldName.ACTION.value) != MessageType.PRESENCE.value:
@@ -51,6 +61,9 @@ def validate_presence(msg) -> str:
 
 
 def validate_add_contact(msg, account) -> str:
+    """
+    Функция анализа сообщения добавления контакта
+    """
     if not msg:
         return "Empty message"
     if msg.get(ClientRequestFieldName.ACTION.value) != MessageType.ADD_CONTACT.value:
@@ -64,6 +77,9 @@ def validate_add_contact(msg, account) -> str:
 
 
 def validate_del_contact(msg, account) -> str:
+    """
+    Функция анализа сообщения удаления контакта
+    """
     if not msg:
         return "Empty message"
     if msg.get(ClientRequestFieldName.ACTION.value) != MessageType.DEL_CONTACT.value:
@@ -77,6 +93,9 @@ def validate_del_contact(msg, account) -> str:
 
 
 def validate_get_contact(msg, account) -> str:
+    """
+    Функция анализа сообщения получения списка контактов
+    """
     if not msg:
         return "Empty message"
     if msg.get(ClientRequestFieldName.ACTION.value) != MessageType.GET_CONTACTS.value:
@@ -89,6 +108,9 @@ def validate_get_contact(msg, account) -> str:
 
 
 def validate_user_msg(msg, account) -> str:
+    """
+    Функция анализа сообщения для контакта
+    """
     if not msg:
         return "Empty message"
     if msg.get(ClientRequestFieldName.ACTION.value) != MessageType.MESSAGE.value:
@@ -103,6 +125,9 @@ def validate_user_msg(msg, account) -> str:
 
 
 def create_response(code=ResponseCode.OK.value, msg=None):
+    """
+    Функция создания ответа от сервера
+    """
     logger.info('Creating response for client [code=%s, msg=%s]', code, msg)
     assert isinstance(code, int), 'code is not an integer'
     data = {
@@ -120,14 +145,19 @@ def create_response(code=ResponseCode.OK.value, msg=None):
 
 
 def remove_if_present(key, d: dict):
+    """
+    Функция удаления значения из словаря
+    """
     value = d.get(key)
     if value is not None:
         del d[key]
 
 
-def remove_from_list(obj, l: list):
+def remove_from_list(obj, lst: list):
+    """
+    Функция удаления значения из списка
+    """
     try:
-        l.remove(obj)
+        lst.remove(obj)
     except ValueError:
         pass
-

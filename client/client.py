@@ -1,7 +1,9 @@
-# *В следующем уроке мы будем изучать дескрипторы и метаклассы.
-# Но вы уже сейчас можете перевести часть кода из функционального стиля в объектно-ориентированный.
-# Создайте классы «Клиент» и «Сервер», а используемые функции превратите в методы классов.
-from log.client_log_config import logging
+"""
+Модуль, содержащий основной бэкенд класс клиента, отвечающий за передачу,
+получение и обработку сообщений между сервером и UI
+"""
+
+import logging
 import time
 from queue import Queue, Empty
 from socket import socket, AF_INET, SOCK_STREAM
@@ -13,6 +15,10 @@ logger = logging.getLogger('gb.client')
 
 
 class ReceiverThread(Thread):
+    """
+    Поток, отвечающий за получение и обработку данных
+    """
+
     def __init__(self, sock: socket, responses_queue: Queue):
         super().__init__()
         self.__socket = sock
@@ -28,7 +34,11 @@ class ReceiverThread(Thread):
     def stopped(self):
         return self.__stopped
 
-    def run(self):  # the thread reads all messages from server
+    def run(self):
+        """
+        Запускает поток для получения данных от сервера. Пока поток (__stopped) True,
+        получает все сообщения от сервера, разбирает ответы и отправляет их в очередь
+        """
         while not self.__stopped:
             data = get_data(self.__socket)
             logger.debug("Received message from server [msg=%s]", data)
@@ -54,15 +64,31 @@ class ReceiverThread(Thread):
             listener(self.__messages_queue.get_nowait())
 
 
-class SendTask:  # заполняет очередь __task_queue задачами, типа отправить presence, auth, mess контакту
+class SendTask:
+    """
+    Класс описывает общие свойства каждой задачи, положенной в очередь __task_queue
+    """
+
     def __init__(self, msg: dict, result_callback):
+        """
+        Метод инициализации. Выставляются основные параметры класса
+        (сообщение в виде словаря и коллбек)
+        """
         self.msg = msg
         self.result_callback = result_callback  # func accepting response from server
 
 
 class SenderThread(Thread):
+    """
+    Поток отвечает за заполнение очереди __task_queue задачами
+    (отправить presence, auth, message контакту) для сервера и обработку данных
+    """
 
     def __init__(self, sock: socket, responses_queue: Queue):
+        """
+        Метод инициализации. Выставляются основные параметры отправляющего потока
+        (сокет, очередь задач для сервера, очередь ответов от сервера)
+        """
         super().__init__()
         self.__socket = sock
         self.__task_queue = Queue()
@@ -70,9 +96,17 @@ class SenderThread(Thread):
         self.__stopped = False
 
     def submit_task(self, msg: dict, callback):
+        """
+        Метод, который кладет задачу в очередь __task_queue с сообщением и коллбеком
+        """
         self.__task_queue.put(SendTask(msg, callback))  # callback - func accepting response from server (put result)
 
     def run(self):
+        """
+        Запускает поток для отправления данных от сервера. Пока поток (__stopped) True,
+        берет задачу из очереди и отправляет на сервер, получает ответ от него
+        и отправляет в объект task
+        """
         while not self.__stopped:
             try:
                 task: SendTask = self.__task_queue.get(timeout=1)
@@ -86,10 +120,16 @@ class SenderThread(Thread):
 
 
 def create_socket() -> socket:
+    """
+    Метод создания сокета клиента
+    """
     return socket(AF_INET, SOCK_STREAM)
 
 
 class Client:
+    """
+    Основной класс клиента
+    """
 
     def __init__(self, address='localhost', port=7777):
         self.__address = address
@@ -103,6 +143,9 @@ class Client:
 
     @staticmethod
     def __create_sign_up_msg(login, password, name, surname, birthdate):
+        """
+        Метод для сервера, формирующий сообщение в виде словаря для регистрации пользователя
+        """
         return {
             'action': MessageType.SIGN_UP.value,
             'time': time.time(),
@@ -117,6 +160,9 @@ class Client:
 
     @staticmethod
     def __create_message(account_name, recipient_name, message):
+        """
+        Метод для сервера, формирующий сообщение в виде словаря для другого пользователя
+        """
         message_dict = {
             "action": "msg",
             "time": time.time(),
@@ -128,6 +174,9 @@ class Client:
 
     @staticmethod
     def __create_authenticate_msg(account_name, password):
+        """
+        Метод для сервера, формирующий сообщение в виде словаря для аутентификации пользователя
+        """
         return {
             'action': MessageType.AUTHENTICATE.value,
             'time': time.time(),
@@ -139,6 +188,9 @@ class Client:
 
     @staticmethod
     def __create_presence_msg(account_name, status=''):
+        """
+        Метод для сервера, формирующий presence - сообщение в виде словаря
+        """
         return {
             'action': MessageType.PRESENCE.value,
             'time': time.time(),
@@ -151,6 +203,9 @@ class Client:
 
     @staticmethod
     def __create_get_contacts(account_name):
+        """
+        Метод для сервера, запрашивающий контакты
+        """
         message_dict = {
             "action": MessageType.GET_CONTACTS.value,
             "time": time.time(),
@@ -160,6 +215,9 @@ class Client:
 
     @staticmethod
     def __create_add_contact(owner_login, contact_login):
+        """
+        Метод для сервера, формирующий сообщение в виде словаря для добавления контакта
+        """
         message_dict = {
             "action": MessageType.ADD_CONTACT.value,
             "user_id": owner_login,
@@ -170,6 +228,9 @@ class Client:
 
     @staticmethod
     def __create_del_contact(owner_login, contact_login):
+        """
+        Метод для сервера, формирующий сообщение в виде словаря для удаления контакта
+        """
         message_dict = {
             "action": MessageType.DEL_CONTACT.value,
             "user_id": owner_login,
@@ -179,6 +240,9 @@ class Client:
         return message_dict
 
     def logout(self):
+        """
+        Метод выхода пользователя
+        """
         self.__stopped = True
         if self.__receiver:
             self.__receiver.stop()
@@ -186,18 +250,22 @@ class Client:
     def stopped(self) -> bool:
         return self.__stopped
 
-    def await_termination(self, timeout=5):
-        if not self.__receiver:
-            return
-        self.__receiver.join(timeout)
-        self.__sock.close()
-
     def send(self, recipient_name, message, result):
+        """
+        Метод связывает UI с сервером, вызывается при нажатии на кнопку Send для отправления сообщений
+        :param recipient_name:
+        :param message:
+        :param result:
+        :return:
+        """
         if self.__sock is None:
             raise ValueError('Client is not initialised')
         self.__task_sender.submit_task(self.__create_message(self.__account, recipient_name, message), result)
 
     def login(self, login, password, result):
+        """
+        Метод, отвечающий за прохождение аутентификации
+        """
         if self.__connected:
             raise ValueError('Client already connected')
         self.__connected = True
@@ -214,6 +282,9 @@ class Client:
                                        lambda response: self.__login_callback(login, response, result))
 
     def sign_up(self, login, password, name, surname, birthdate, result):
+        """
+        Метод, отвечающий за прохождение регистрации
+        """
         if self.__connected:
             raise ValueError('Client already connected')
         self.__connected = True
@@ -234,48 +305,38 @@ class Client:
         return self.__account
 
     def __login_callback(self, login, response, callback):
+        """
+        Метод, предназначенный для передачи ответа от сервера сигналу на UI
+        :param login:
+        :param response:
+        :param callback:
+        :return:
+        """
         self.__account = login
         callback(response)
 
     def subscribe_to_messages(self, listener):
+        """
+        Метод, предназначенный для передачи ответа от сервера сигналу на UI
+        """
         if self.__receiver is None:
             raise ValueError('Client is not logged in')
         self.__receiver.subscribe_to_messages(listener)
 
     def get_contact_list(self, result):
+        """
+        Метод, связанный с UI, отображения контактов пользователя
+        """
         self.__task_sender.submit_task(self.__create_get_contacts(self.__account), result)
 
     def add_contact(self, contact: str, result):
+        """
+        Метод, связанный с UI, добавления контакта пользователя
+        """
         self.__task_sender.submit_task(self.__create_add_contact(self.__account, contact), result)
 
     def del_contact(self, contact: str, result):
+        """
+        Метод, связанный с UI, удаления контакта пользователя
+        """
         self.__task_sender.submit_task(self.__create_del_contact(self.__account, contact), result)
-
-
-
-def main():
-    client_name = input('Input your name: ')
-    client = Client(address='localhost', port=7777)
-    login_queue = Queue()
-    client.login(client_name, "ignored", lambda msg: client.get_contact_list(lambda response: print(response)))
-
-    login_response = login_queue.get()
-
-    # print(client.del_contact('tommy', lambda response: print(response)))
-    print()
-
-    # while not client.stopped():
-    #     friend = input('Input friend\'s name: ')
-    #     if friend == ':quit':
-    #         break
-    #     while True:
-    #         mes = input('Input your message: ')
-    #         if mes == ':quit':
-    #             break
-    #         client.send(friend, mes,
-    #                     lambda response: logger.info("Message sent to server [response=%s]", response))
-    # client.await_termination()
-
-
-if __name__ == '__main__':
-    main()
