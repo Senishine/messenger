@@ -22,18 +22,49 @@ background-color: rgb(255, 170, 127);
 background-color: qlineargradient(spread:pad, x1:0.029297, y1:0, x2:0.975248, y2:0.966, stop:0 rgba(0, 0, 0, 255), stop:0.935644 rgba(255, 170, 219, 255));}</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_2">
-      <item row="0" column="0">
-       <widget class="QLabel" name="label">
+      <item row="0" column="3">
+       <widget class="QLabel" name="label_2">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="styleSheet">
          <string notr="true">font: 12pt &quot;MS Shell Dlg 2&quot;; color:rgb(255, 255, 255)
 </string>
         </property>
         <property name="text">
-         <string>Account</string>
+         <string>Contacts</string>
         </property>
        </widget>
       </item>
-      <item row="1" column="0" colspan="2">
+      <item row="0" column="0">
+       <widget class="QPushButton" name="exit_btn">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>40</width>
+          <height>35</height>
+         </size>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">color:rgb(255, 255, 255);
+border-radius:10px;
+font: 12pt &quot;MS Shell Dlg 2&quot;;
+background-color: rgb(110, 114, 127);</string>
+        </property>
+        <property name="text">
+         <string>Exit</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0" colspan="3">
        <widget class="QWidget" name="common_widget" native="true">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
@@ -55,22 +86,17 @@ background-color: qlineargradient(spread:pad, x1:0.029297, y1:0, x2:0.975248, y2
           <number>30</number>
          </property>
          <item>
-          <widget class="QTextEdit" name="mes_history">
-           <property name="minimumSize">
-            <size>
-             <width>350</width>
-             <height>0</height>
-            </size>
-           </property>
+          <widget class="QListView" name="chat_list">
            <property name="styleSheet">
-            <string notr="true">background-color: rgb(249, 225, 255);
-border-radius:15px;
-font: 12pt &quot;MS Shell Dlg 2&quot;;</string>
+            <string notr="true">font: 14pt &quot;MS Shell Dlg 2&quot;;
+background-color: rgb(198, 188, 200);
+border-radius:30px;
+</string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QTextEdit" name="input_text_field">
+          <widget class="QTextEdit" name="input_message">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
              <horstretch>0</horstretch>
@@ -136,6 +162,9 @@ background-color: rgb(110, 114, 127);</string>
              <property name="text">
               <string>Send</string>
              </property>
+             <property name="default">
+              <bool>true</bool>
+             </property>
             </widget>
            </item>
           </layout>
@@ -143,7 +172,7 @@ background-color: rgb(110, 114, 127);</string>
         </layout>
        </widget>
       </item>
-      <item row="1" column="2">
+      <item row="1" column="3">
        <widget class="QWidget" name="contacts_widget" native="true">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
@@ -224,6 +253,9 @@ border-radius:20px;
             <string notr="true">border-radius:10px;
 font: 12pt &quot;MS Shell Dlg 2&quot;;
 background-color: rgb(249, 225, 255);</string>
+           </property>
+           <property name="text">
+            <string/>
            </property>
           </widget>
          </item>
@@ -306,20 +338,14 @@ background-color: rgb(110, 114, 127);</string>
         </layout>
        </widget>
       </item>
-      <item row="0" column="2">
-       <widget class="QLabel" name="label_2">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
+      <item row="0" column="1">
+       <widget class="QLabel" name="label">
         <property name="styleSheet">
          <string notr="true">font: 12pt &quot;MS Shell Dlg 2&quot;; color:rgb(255, 255, 255)
 </string>
         </property>
         <property name="text">
-         <string>Contacts</string>
+         <string>Account</string>
         </property>
        </widget>
       </item>
@@ -329,5 +355,22 @@ background-color: rgb(110, 114, 127);</string>
   </layout>
  </widget>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>contacts_list</sender>
+   <signal>currentTextChanged(QString)</signal>
+   <receiver>input_contact_login</receiver>
+   <slot>setText(QString)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>774</x>
+     <y>279</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>825</x>
+     <y>603</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
 </ui>

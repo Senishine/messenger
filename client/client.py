@@ -13,12 +13,13 @@ logger = logging.getLogger('gb.client')
 
 
 class ReceiverThread(Thread):
-    def __init__(self, sock: socket, responses_queue: Queue, message_listener):
+    def __init__(self, sock: socket, responses_queue: Queue):
         super().__init__()
         self.__socket = sock
         self.__responses_queue = responses_queue
-        self.__message_listener = message_listener  # callback function, when messages from clients come it is called
         self.__stopped = False
+        self.__messages_queue = Queue()
+        self.__message_listener = None
 
     def stop(self):
         self.__stopped = True
@@ -39,10 +40,18 @@ class ReceiverThread(Thread):
             # {'action': 'msg', to: <account_name>, from:<account_name>, "message": "message", etc}
             action = data.get(ClientRequestFieldName.ACTION.value)
             if action != MessageType.MESSAGE.value:
-                print(f"Received unknown message from server msg={data}")
+                logger.info('Received unknown message from server msg=%s', data)
                 self.stop()
                 return
-            self.__message_listener(data)  # if message from contact, invoke callback
+            if self.__messages_queue.empty() and self.__message_listener is not None:
+                self.__message_listener(data)  # if message from contact, invoke callback
+            else:
+                self.__messages_queue.put(data)
+
+    def subscribe_to_messages(self, listener):
+        self.__message_listener = listener
+        while not self.__messages_queue.empty():
+            listener(self.__messages_queue.get_nowait())
 
 
 class SendTask:  # заполняет очередь __task_queue задачами, типа отправить presence, auth, mess контакту
@@ -80,10 +89,9 @@ def create_socket() -> socket:
     return socket(AF_INET, SOCK_STREAM)
 
 
-class Client():
+class Client:
 
-    def __init__(self, message_listener, address='localhost', port=7777):
-        self.__message_listener = message_listener
+    def __init__(self, address='localhost', port=7777):
         self.__address = address
         self.__port = port
         self.__account = None
@@ -172,7 +180,7 @@ class Client():
         self.__sock.connect((self.__address, self.__port))
 
         response_queue = Queue()
-        self.__receiver = ReceiverThread(self.__sock, response_queue, self.__message_listener)
+        self.__receiver = ReceiverThread(self.__sock, response_queue)
         self.__task_sender = SenderThread(self.__sock, response_queue)
         self.__task_sender.start()
         self.__receiver.start()
@@ -180,9 +188,18 @@ class Client():
         self.__task_sender.submit_task(self.__create_presence_msg(login),
                                        lambda response: self.__login_callback(login, response, result))
 
+    @property
+    def account_name(self):
+        return self.__account
+
     def __login_callback(self, login, response, callback):
         self.__account = login
         callback(response)
+
+    def subscribe_to_messages(self, listener):
+        if self.__receiver is None:
+            raise ValueError('Client is not logged in')
+        self.__receiver.subscribe_to_messages(listener)
 
     def get_contact_list(self, result):
         self.__task_sender.submit_task(self.__create_get_contacts(self.__account), result)
@@ -194,17 +211,17 @@ class Client():
         self.__task_sender.submit_task(self.__create_del_contact(self.__account, contact), result)
 
 
+
 def main():
     client_name = input('Input your name: ')
-    client = Client(lambda msg: print(msg), address='localhost', port=7777)
+    client = Client(address='localhost', port=7777)
     login_queue = Queue()
-    client.login(client_name, "ignored", lambda msg: login_queue.put(msg))
+    client.login(client_name, "ignored", lambda msg: client.get_contact_list(lambda response: print(response)))
 
     login_response = login_queue.get()
 
     # print(client.del_contact('tommy', lambda response: print(response)))
-    print(client.get_contact_list(lambda response: print(response)))
-
+    print()
 
     # while not client.stopped():
     #     friend = input('Input friend\'s name: ')
